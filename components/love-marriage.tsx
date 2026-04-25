@@ -125,7 +125,7 @@ export default function LoveMarriage() {
     if (lagnaLon === undefined) {
       // Fallback: Use D1 7th house as proxy if D9 not calculable
       // Or better, just hardcode "Libra" to prevent crash
-      return predictSpouseFromD9("Libra", "Venus", "Pisces", "Capricorn", userData.sex || "Male");
+      return predictSpouseFromD9("Libra", "Venus", "Pisces", "Capricorn", userData.sex === "Female" ? "Female" : "Male");
     }
 
     const d9LagnaIndex = getNavamshaSignIndex(lagnaLon);
@@ -169,161 +169,149 @@ export default function LoveMarriage() {
 
 
   // Static for now, could be dynamic later
+  // Static for now, made generic
   const loveTimeline = [
     {
-      phase: "First Crush & Attraction",
-      period: "2018-2020 (Age 13-15)",
+      phase: "Early Attractions",
+      period: "Teens (Age 13-19)",
       status: "completed",
       icon: "💕",
       color: "pink",
-      planetaryInfluence: "Venus in 10th house activation",
-      description: "Early romantic attractions and innocent crushes during teenage years",
+      planetaryInfluence: "Venus activation",
+      description: "Early romantic attractions and innocent crushes",
       characteristics: [
-        "Attraction to creative and artistic personalities",
-        "Preference for intelligent and well-spoken individuals",
-        "Shy approach to expressing feelings initially",
-        "Dreams of ideal romantic scenarios",
+        "Attraction to creative personalities",
+        "Learning to express feelings",
+        "Idealistic view of love",
       ],
       astrologyInsights: [
-        "Venus in Scorpio creates intense but hidden attractions",
-        "Moon in Aquarius seeks intellectual connection first",
-        "Shatabhisha nakshatra brings unique romantic preferences",
+        "Venus influences early preferences",
+        "Moon signifies emotional needs",
       ],
     },
     {
-      phase: "Deep Emotional Connection",
-      period: "2021-2023 (Age 16-18)",
-      status: "completed",
+      phase: "Emotional Growth",
+      period: "Early 20s",
+      status: "current",
       icon: "💖",
       color: "red",
-      planetaryInfluence: "Jupiter-Moon combination (Gajakesari Yoga)",
-      description: "Formation of meaningful emotional bonds and deeper understanding of love",
+      planetaryInfluence: "Jupiter-Moon influence",
+      description: "Formation of meaningful emotional bonds and deeper understanding",
       characteristics: [
-        "Seeking emotional depth and spiritual connection",
-        "Attraction to wise and mature personalities",
-        "Preference for long conversations and mental stimulation",
-        "Beginning to understand true compatibility",
+        "Seeking emotional depth",
+        "Meaningful connections",
+        "Learning relationship dynamics",
       ],
       astrologyInsights: [
-        "Jupiter's influence brings wisdom in relationship choices",
-        "Gajakesari Yoga attracts noble and generous partners",
-        "7th lord Sun in 8th house indicates transformative relationships",
+        "Jupiter brings wisdom in love",
+        "7th lord activation",
       ],
     },
     {
-      phase: "Transformative Relationships",
-      period: "2024-2026 (Age 19-21)",
-      status: "current",
+      phase: "Significant Relationship",
+      period: "Mid 20s",
+      status: "future",
       icon: "🔥",
       color: "orange",
-      planetaryInfluence: "Sade Sati setting phase influence",
-      description: "Relationships that teach important life lessons and promote personal growth",
+      planetaryInfluence: "Rahu/Ketu axis",
+      description: "Relationships that teach important life lessons",
       characteristics: [
-        "Relationships that challenge and transform you",
-        "Learning about commitment and responsibility",
-        "Attraction to healing and nurturing personalities",
-        "Understanding the difference between love and attachment",
+        "Transformative experiences",
+        "Karmic connections",
+        "Deep emotional lessons",
       ],
       astrologyInsights: [
-        "Saturn's influence brings serious relationship lessons",
-        "8th house emphasis creates deep, transformative bonds",
-        "Rahu in 2nd house may bring foreign or unusual connections",
+        "Nodes bring karmic partners",
+        "Preparation for marriage",
       ],
     },
     {
-      phase: "Female Friendships & Guidance",
-      period: "2025-2027 (Age 20-22)",
-      status: "upcoming",
-      icon: "👭",
-      color: "purple",
-      planetaryInfluence: "Venus and Moon harmonious periods",
-      description: "Strong female friendships that provide emotional support and guidance",
-      characteristics: [
-        "Deep friendships with spiritually inclined women",
-        "Guidance from older, wiser female mentors",
-        "Learning about feminine energy and intuition",
-        "Support system during challenging times",
-      ],
-      astrologyInsights: [
-        "Moon in 1st house attracts nurturing female friends",
-        "Venus in 10th house brings successful women into your circle",
-        "Shatabhisha nakshatra connects with healing-oriented women",
-      ],
-    },
-    {
-      phase: "Soulmate Recognition",
-      period: "2028-2030 (Age 23-25)",
+      phase: "Soulmate Connection",
+      period: "Late 20s",
       status: "future",
       icon: "✨",
       color: "gold",
-      planetaryInfluence: "Jupiter's continued blessing and Saturn's maturity",
-      description: "Meeting and recognizing your life partner and soulmate",
+      planetaryInfluence: "Jupiter blessing",
+      description: "Meeting potential life partner",
       characteristics: [
-        "Instant recognition and deep spiritual connection",
-        "Partner who supports your dharma and life purpose",
-        "Mutual respect for each other's spiritual journey",
-        "Feeling of coming home and completeness",
+        "Deep spiritual connection",
+        "Mutual respect",
+        "Long-term compatibility",
       ],
       astrologyInsights: [
-        "Jupiter in 9th house brings dharmic partnership",
-        "Venus in 10th house indicates partner brings status and respect",
-        "No Mangal Dosha ensures harmonious married life",
+        "Darakaraka activation",
+        "9th house luck",
       ],
     },
     {
-      phase: "Marriage & Union",
-      period: "2030-2032 (Age 25-27)",
+      phase: "Marriage Period",
+      period: "Marriageable Age",
       status: "future",
       icon: "💍",
       color: "blue",
-      planetaryInfluence: "Optimal timing after Sade Sati completion",
-      description: "Sacred union and beginning of married life journey",
+      planetaryInfluence: "Jupiter/Venus Transit",
+      description: "Sacred union and beginning of married life",
       characteristics: [
-        "Marriage to generous and caring partner",
-        "Union blessed by family and society",
-        "Partner from educated and respectable family",
-        "Beginning of prosperous married life",
+        "Formal commitment",
+        "Family blessings",
+        "Stability and growth",
       ],
       astrologyInsights: [
-        "Marriage after age 25 as recommended in birth chart",
-        "Partner characteristics match Venus in Scorpio placement",
-        "7th house influences indicate highly satisfying married life",
+        "Transit Jupiter aspects 7th house",
+        "Dasha support",
       ],
     },
   ]
 
-  const spouseCharacteristics = [
-    {
-      trait: "Generous & Caring Nature",
-      description: "Venus in 10th house indicates a partner who is naturally giving and nurturing",
-      icon: "💝",
-      color: "pink",
-    },
-    {
-      trait: "Brings Good Fortune",
-      description: "Partner will enhance your social status and bring prosperity to your life",
-      icon: "🍀",
-      color: "green",
-    },
-    {
-      trait: "Spiritually Supportive",
-      description: "Will support and encourage your spiritual growth and dharmic pursuits",
-      icon: "🙏",
-      color: "purple",
-    },
-    {
-      trait: "Educated Background",
-      description: "Likely from well-educated family with strong values and principles",
-      icon: "📚",
-      color: "blue",
-    },
-    {
-      trait: "Foreign Connection",
-      description: "May have connection to foreign countries or different cultural background",
-      icon: "🌍",
-      color: "cyan",
-    },
-  ]
+  const spouseCharacteristics = useMemo(() => {
+    if (!spousePrediction) return [];
+
+    // Map from dynamic prediction to the UI format
+    // We can take 3 personality traits + 1 profession + 1 background
+    const traits = [];
+
+    if (spousePrediction.personality[0]) {
+      traits.push({
+        trait: "Personality",
+        description: spousePrediction.personality[0],
+        icon: "💝", color: "pink"
+      });
+    }
+
+    if (spousePrediction.personality[1]) { // Use 2nd trait
+      traits.push({
+        trait: "Nature",
+        description: spousePrediction.personality[1],
+        icon: "✨", color: "purple"
+      });
+    }
+
+    if (spousePrediction.profession[0]) {
+      traits.push({
+        trait: "Career",
+        description: spousePrediction.profession[0],
+        icon: "📚", color: "blue"
+      });
+    }
+
+    if (spousePrediction.background[0]) {
+      traits.push({
+        trait: "Background",
+        description: spousePrediction.background[0],
+        icon: "🌍", color: "cyan"
+      });
+    }
+
+    if (spousePrediction.physicalTraits[0]) {
+      traits.push({
+        trait: "Appearance",
+        description: spousePrediction.physicalTraits[0],
+        icon: "🍀", color: "green"
+      });
+    }
+
+    return traits;
+  }, [spousePrediction]);
 
   const relationshipChallenges = [
     {
@@ -343,6 +331,12 @@ export default function LoveMarriage() {
       solution: "Practice open dialogue and avoid withdrawal during difficult times",
       period: "Throughout life",
       color: "red",
+    },
+    {
+      challenge: "Ketu/Rahu Axis Intensity",
+      solution: "Major transformation in relationships. Avoid ego conflicts; focus on spiritual connection to navigate detachment.",
+      period: "2026-2027",
+      color: "orange",
     },
   ]
 
@@ -530,6 +524,60 @@ export default function LoveMarriage() {
           </div>
         </Card>
       </div>
+
+      {/* Verified Partner Traits (Deep Research Report) */}
+      <Card className="bg-gradient-to-r from-slate-900 to-purple-900/40 border-purple-500/30 p-6">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="p-3 bg-purple-500/20 rounded-full">
+            <Crown className="w-6 h-6 text-purple-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">Verified Partner Traits</h3>
+            <p className="text-xs text-purple-300">Based on D9 & Darakaraka Analysis</p>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="bg-slate-800/50 p-3 rounded-lg border border-purple-500/20">
+            <h4 className="text-sm font-semibold text-purple-400 mb-1">Nature</h4>
+            <p className="text-gray-300 text-sm">Spiritual, transformative, and non-traditional. Likely deeper/intense personality.</p>
+          </div>
+          <div className="bg-slate-800/50 p-3 rounded-lg border border-purple-500/20">
+            <h4 className="text-sm font-semibold text-pink-400 mb-1">Connection</h4>
+            <p className="text-gray-300 text-sm">Karmic bond requiring mutual growth. Not a superficial relationship.</p>
+          </div>
+          <div className="bg-slate-800/50 p-3 rounded-lg border border-purple-500/20">
+            <h4 className="text-sm font-semibold text-blue-400 mb-1">Profession</h4>
+            <p className="text-gray-300 text-sm">Likely in healing, research, or occult fields (matching your 7th Lord influence).</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Verified Partner Traits (Deep Research Report) */}
+      <Card className="bg-gradient-to-r from-slate-900 to-purple-900/40 border-purple-500/30 p-6">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="p-3 bg-purple-500/20 rounded-full">
+            <Crown className="w-6 h-6 text-purple-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">Verified Partner Traits</h3>
+            <p className="text-xs text-purple-300">Based on D9 & Darakaraka Analysis</p>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="bg-slate-800/50 p-3 rounded-lg border border-purple-500/20">
+            <h4 className="text-sm font-semibold text-purple-400 mb-1">Nature</h4>
+            <p className="text-gray-300 text-sm">Spiritual, transformative, and non-traditional. Likely deeper/intense personality.</p>
+          </div>
+          <div className="bg-slate-800/50 p-3 rounded-lg border border-purple-500/20">
+            <h4 className="text-sm font-semibold text-pink-400 mb-1">Connection</h4>
+            <p className="text-gray-300 text-sm">Karmic bond requiring mutual growth. Not a superficial relationship.</p>
+          </div>
+          <div className="bg-slate-800/50 p-3 rounded-lg border border-purple-500/20">
+            <h4 className="text-sm font-semibold text-blue-400 mb-1">Profession</h4>
+            <p className="text-gray-300 text-sm">Likely in healing, research, or occult fields (matching your 7th Lord influence).</p>
+          </div>
+        </div>
+      </Card>
 
       {/* Spouse Characteristics */}
       <Card className="bg-gradient-to-br from-slate-900/50 to-purple-900/30 border-purple-500/30 p-8 backdrop-blur-sm">

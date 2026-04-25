@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useAstrologyStore } from "@/stores/astrology-store"
 import {
     Gem,
     AlertTriangle,
@@ -35,216 +36,246 @@ interface GemstoneInfo {
     reason: string
 }
 
-// Sudhanshu's chart analysis for gemstone recommendations
-const GEMSTONE_DATA: GemstoneInfo[] = [
+const GEMSTONE_TEMPLATES: Omit<GemstoneInfo, "suitable" | "reason" | "planet">[] = [
     {
-        name: "Blue Sapphire",
-        hindiName: "Neelam",
-        planet: "Saturn (Lagna Lord)",
-        planetSymbol: "♄",
-        color: "Deep Blue",
-        colorClass: "from-blue-600 to-blue-900",
-        benefits: [
-            "Strengthens Lagna Lord Saturn",
-            "Career success and recognition",
-            "Discipline and focus",
-            "Protection during Sade Sati",
-            "Wealth accumulation"
-        ],
-        carats: "3-5 carats minimum",
-        metal: "Silver or Platinum",
-        finger: "Middle finger (right hand)",
-        day: "Saturday, during Shani Hora",
-        mantra: "Om Sham Shanicharaya Namah (108 times)",
-        alternatives: ["Amethyst", "Blue Spinel", "Iolite"],
-        precautions: [
-            "MUST trial for 3 days before wearing permanently",
-            "Observe dreams and events during trial",
-            "Remove if negative effects occur",
-            "Consult expert astrologer before wearing"
-        ],
-        price: "₹15,000 - ₹1,00,000+ per carat",
-        suitable: true,
-        reason: "Saturn is Lagna Lord in Aquarius - highly beneficial"
-    },
-    {
-        name: "Emerald",
-        hindiName: "Panna",
-        planet: "Mercury (5th & 8th Lord)",
-        planetSymbol: "☿",
-        color: "Green",
-        colorClass: "from-emerald-500 to-emerald-800",
-        benefits: [
-            "Enhances intelligence and communication",
-            "Success in education and writing",
-            "Business and trade success",
-            "Nervous system health",
-            "Mercury in 9th house benefits"
-        ],
-        carats: "3-6 carats",
-        metal: "Gold or Silver",
-        finger: "Little finger (right hand)",
-        day: "Wednesday, during Budha Hora",
-        mantra: "Om Bum Budhaya Namah (108 times)",
-        alternatives: ["Peridot", "Green Tourmaline", "Tsavorite"],
-        precautions: [
-            "Ensure natural, untreated stone",
-            "Mercury should not be combust",
-            "May not suit Pisces or Sagittarius ascendant"
-        ],
-        price: "₹5,000 - ₹50,000+ per carat",
-        suitable: true,
-        reason: "Mercury in 9th house (own sign) - supports education & wisdom"
-    },
-    {
-        name: "Diamond",
-        hindiName: "Heera",
-        planet: "Venus (4th & 9th Lord)",
-        planetSymbol: "♀",
-        color: "White/Colorless",
-        colorClass: "from-gray-100 to-gray-300",
-        benefits: [
-            "Luxury and comfort",
-            "Artistic abilities",
-            "Relationship harmony",
-            "Venus in 10th house - career authority",
-            "Beauty and charm"
-        ],
-        carats: "0.5-1.5 carats",
-        metal: "Platinum or White Gold",
-        finger: "Ring finger (right hand)",
-        day: "Friday, during Shukra Hora",
-        mantra: "Om Shum Shukraya Namah (108 times)",
-        alternatives: ["White Sapphire", "Zircon", "White Topaz"],
-        precautions: [
-            "May increase material desires",
-            "Balance with spiritual practices",
-            "Ensure certified natural diamond"
-        ],
-        price: "₹50,000 - ₹5,00,000+ per carat",
-        suitable: true,
-        reason: "Venus is Yogakaraka for Aquarius - highly auspicious"
-    },
-    {
-        name: "Yellow Sapphire",
-        hindiName: "Pukhraj",
-        planet: "Jupiter (2nd & 11th Lord)",
-        planetSymbol: "♃",
-        color: "Yellow",
-        colorClass: "from-yellow-400 to-amber-600",
-        benefits: [
-            "Wisdom and knowledge",
-            "Wealth and prosperity",
-            "Good fortune",
-            "Jupiter Mahadasha benefits",
-            "Spiritual growth"
-        ],
+        name: "Ruby",
+        hindiName: "Manik",
+        // planet: "Sun", // Handled dynamically
+        planetSymbol: "☉",
+        color: "Deep Red",
+        colorClass: "from-red-600 to-red-900",
+        benefits: ["Authority & Leadership", "Confidence", "Vitality", "Father's support", "Public Recognition"],
         carats: "3-5 carats",
-        metal: "Gold",
-        finger: "Index finger (right hand)",
-        day: "Thursday, during Guru Hora",
-        mantra: "Om Brim Brihaspataye Namah (108 times)",
-        alternatives: ["Citrine", "Yellow Topaz", "Golden Beryl"],
-        precautions: [
-            "Jupiter should not be debilitated",
-            "May increase weight if diet not controlled",
-            "Avoid cracked stones"
-        ],
-        price: "₹10,000 - ₹80,000+ per carat",
-        suitable: true,
-        reason: "Currently in Jupiter Mahadasha - excellent choice"
+        metal: "Gold or Copper",
+        finger: "Ring finger",
+        day: "Sunday",
+        mantra: "Om Hram Hreem Hroum Sah Suryaya Namah",
+        alternatives: ["Red Spinel", "Red Garnet"],
+        precautions: ["Avoid if Sun is debilitated in Libra (check degrees)", "Increases body heat"],
+        price: "₹5,000 - ₹50,000+"
+    },
+    {
+        name: "Pearl",
+        hindiName: "Moti",
+        planetSymbol: "☽",
+        color: "White/Cream",
+        colorClass: "from-slate-100 to-slate-200",
+        benefits: ["Emotional stability", "Mental peace", "Mother's health", "Creativity", "Intuition"],
+        carats: "5-10 carats",
+        metal: "Silver",
+        finger: "Little finger",
+        day: "Monday",
+        mantra: "Om Shram Shreem Shroum Sah Chandraya Namah",
+        alternatives: ["Moonstone"],
+        precautions: ["Avoid if suffering from cough/cold often", "Emotional sensitivity increase"],
+        price: "₹1,000 - ₹20,000+"
     },
     {
         name: "Red Coral",
         hindiName: "Moonga",
-        planet: "Mars (3rd & 10th Lord)",
         planetSymbol: "♂",
         color: "Red/Orange",
-        colorClass: "from-red-500 to-orange-600",
-        benefits: [
-            "Courage and confidence",
-            "Victory over enemies",
-            "Physical strength",
-            "Property matters",
-            "Leadership abilities"
-        ],
-        carats: "6-9 carats",
-        metal: "Gold or Copper",
-        finger: "Ring finger (right hand)",
-        day: "Tuesday, during Mangal Hora",
-        mantra: "Om Kram Kreem Kroum Sah Bhaumaya Namah (108 times)",
-        alternatives: ["Carnelian", "Red Jasper"],
-        precautions: [
-            "May increase aggression if Mars is strong",
-            "Test for Mangal Dosha compatibility",
-            "Ensure natural sea coral"
-        ],
-        price: "₹500 - ₹5,000 per carat",
-        suitable: false,
-        reason: "Mars in 8th may intensify transformation - proceed with caution"
+        colorClass: "from-orange-500 to-red-500",
+        benefits: ["Courage & Energy", "Property gains", "Overcoming enemies", "Technical skills", "Physical Strength"],
+        carats: "6-12 carats",
+        metal: "Gold/Copper",
+        finger: "Ring finger",
+        day: "Tuesday",
+        mantra: "Om Kram Kreem Kroum Sah Bhaumaya Namah",
+        alternatives: ["Carnelian"],
+        precautions: ["Avoid if short tempered", "Increases aggression"],
+        price: "₹500 - ₹5,000+"
+    },
+    {
+        name: "Emerald",
+        hindiName: "Panna",
+        planetSymbol: "☿",
+        color: "Green",
+        colorClass: "from-emerald-400 to-emerald-700",
+        benefits: ["Business & Trade", "Communication skills", "Education", "Memory", "Nervous system"],
+        carats: "3-6 carats",
+        metal: "Gold/Silver",
+        finger: "Little finger",
+        day: "Wednesday",
+        mantra: "Om Bram Breem Broum Sah Budhaya Namah",
+        alternatives: ["Peridot", "Green Tourmaline"],
+        precautions: ["Avoid if Mercury is weak/combust"],
+        price: "₹2,000 - ₹40,000+"
+    },
+    {
+        name: "Yellow Sapphire",
+        hindiName: "Pukhraj",
+        planetSymbol: "♃",
+        color: "Yellow",
+        colorClass: "from-yellow-400 to-amber-500",
+        benefits: ["Wisdom & Knowledge", "Wealth & Prosperity", "Marriage happiness", "Spiritual progress", "Liver health"],
+        carats: "4-7 carats",
+        metal: "Gold",
+        finger: "Index finger",
+        day: "Thursday",
+        mantra: "Om Gram Greem Groum Sah Gurave Namah",
+        alternatives: ["Citrine", "Yellow Topaz"],
+        precautions: ["Avoid if Jupiter is 6/8/12 lord (unless strong)"],
+        price: "₹10,000 - ₹1,00,000+"
+    },
+    {
+        name: "Diamond",
+        hindiName: "Heera",
+        planetSymbol: "♀",
+        color: "White/Clear",
+        colorClass: "from-cyan-100 to-blue-100",
+        benefits: ["Luxury & Wealth", "Love & Romance", "Artistic talent", "Vehicle comfort", "Charm"],
+        carats: "0.5-2 carats",
+        metal: "Platinum/Gold",
+        finger: "Middle/Ring finger",
+        day: "Friday",
+        mantra: "Om Dram Dreem Droum Sah Shukraya Namah",
+        alternatives: ["White Sapphire", "Opal", "Zircon"],
+        precautions: ["Can lead to excessive indulgence", "Ensure high clarity"],
+        price: "₹50,000+"
+    },
+    {
+        name: "Blue Sapphire",
+        hindiName: "Neelam",
+        planetSymbol: "♄",
+        color: "Deep Blue",
+        colorClass: "from-blue-700 to-indigo-900",
+        benefits: ["Career growth", "Discipline", "Political success", "Iron/Oil industries", "Mental focus"],
+        carats: "4-7 carats",
+        metal: "Silver/Iron",
+        finger: "Middle finger",
+        day: "Saturday",
+        mantra: "Om Pram Preem Proum Sah Shanaischaraya Namah",
+        alternatives: ["Amethyst", "Iolite", "Lapis Lazuli"],
+        precautions: ["Must trial for 3 days", "Can cause accidents if unsuitable"],
+        price: "₹10,000 - ₹2,00,000+"
     },
     {
         name: "Hessonite",
         hindiName: "Gomed",
-        planet: "Rahu (North Node)",
         planetSymbol: "☊",
-        color: "Honey Brown",
-        colorClass: "from-amber-600 to-amber-900",
-        benefits: [
-            "Protection from Rahu's negative effects",
-            "Success in foreign lands",
-            "Research and technology",
-            "Overcoming confusion",
-            "Financial gains"
-        ],
-        carats: "5-7 carats",
-        metal: "Silver or Panchdhatu",
-        finger: "Middle finger (right hand)",
-        day: "Saturday or Wednesday, during Rahu Kaal",
-        mantra: "Om Ram Rahave Namah (108 times)",
-        alternatives: ["Orange Zircon", "Spessartite Garnet"],
-        precautions: [
-            "Rahu is a shadow planet - effects vary",
-            "May increase ambition excessively",
-            "Combine with Ketu stone if needed"
-        ],
-        price: "₹1,000 - ₹10,000 per carat",
-        suitable: true,
-        reason: "Rahu in 2nd house - can help wealth and speech"
+        color: "Honey/Red-Brown",
+        colorClass: "from-orange-700 to-amber-900",
+        benefits: ["Politics & Power", "Foreign dealings", "Winning court cases", "Sudden gains", "Gambling luck"],
+        carats: "6-10 carats",
+        metal: "Silver",
+        finger: "Middle finger",
+        day: "Saturday",
+        mantra: "Om Bhram Bhreem Bhroum Sah Rahave Namah",
+        alternatives: ["Spessartine"],
+        precautions: ["Avoid if Rahu in 8/12", "Can cause mental confusion"],
+        price: "₹500 - ₹5,000+"
     },
     {
         name: "Cat's Eye",
         hindiName: "Lehsunia",
-        planet: "Ketu (South Node)",
         planetSymbol: "☋",
-        color: "Greenish with Chatoyancy",
-        colorClass: "from-green-700 to-gray-600",
-        benefits: [
-            "Spiritual liberation",
-            "Protection from accidents",
-            "Intuition enhancement",
-            "Past life healing",
-            "Detachment and wisdom"
-        ],
-        carats: "3-5 carats",
-        metal: "Silver or Panchdhatu",
-        finger: "Middle or Little finger",
-        day: "Tuesday or Saturday",
-        mantra: "Om Kem Ketave Namah (108 times)",
-        alternatives: ["Chrysoberyl", "Tiger's Eye"],
-        precautions: [
-            "May cause detachment from material life",
-            "Not for those seeking worldly success initially",
-            "Can trigger spiritual awakening rapidly"
-        ],
-        price: "₹2,000 - ₹20,000 per carat",
-        suitable: true,
-        reason: "Ketu in 8th with Sun - spiritual transformation support"
+        color: "Gray/Green Chatoyant",
+        colorClass: "from-gray-500 to-emerald-900",
+        benefits: ["Spiritual Awakening", "Protection", "Intuition", "Moksha", "Occult knowledge"],
+        carats: "4-7 carats",
+        metal: "Silver",
+        finger: "Ring/Middle finger",
+        day: "Tuesday/Saturday",
+        mantra: "Om Stram Streem Stroum Sah Ketave Namah",
+        alternatives: ["Tiger Eye"],
+        precautions: ["Detachment from world", "Not for material success"],
+        price: "₹1,000 - ₹15,000+"
     }
-]
+];
 
 export default function GemstoneRecommendations() {
+    const { userData } = useAstrologyStore()
     const [selectedGem, setSelectedGem] = useState<GemstoneInfo | null>(null)
+
+    const GEMSTONE_DATA = useMemo(() => {
+        if (!userData) return [];
+
+        const signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+        const lagna = userData.lagna || "Aries";
+        const lagnaIndex = signs.indexOf(lagna);
+
+        // Helper to get Lord of a House
+        const getLordOfHouse = (houseNum: number): string => {
+            // House num is 1-based (1..12). 
+            // Logic: (LagnaIndex + HouseNum - 1) % 12 -> Sign Index -> Ruler
+            const signIndex = (lagnaIndex + houseNum - 1) % 12;
+            const sign = signs[signIndex];
+            const rulers: Record<string, string> = {
+                "Aries": "Mars", "Taurus": "Venus", "Gemini": "Mercury", "Cancer": "Moon",
+                "Leo": "Sun", "Virgo": "Mercury", "Libra": "Venus", "Scorpio": "Mars",
+                "Sagittarius": "Jupiter", "Capricorn": "Saturn", "Aquarius": "Saturn", "Pisces": "Jupiter"
+            };
+            return rulers[sign];
+        };
+
+        const lords = {
+            1: getLordOfHouse(1),
+            5: getLordOfHouse(5),
+            9: getLordOfHouse(9),
+            6: getLordOfHouse(6),
+            8: getLordOfHouse(8),
+            12: getLordOfHouse(12)
+        };
+
+        const mapPlanetToGemName: Record<string, string> = {
+            "Sun": "Ruby", "Moon": "Pearl", "Mars": "Red Coral", "Mercury": "Emerald",
+            "Jupiter": "Yellow Sapphire", "Venus": "Diamond", "Saturn": "Blue Sapphire",
+            "Rahu": "Hessonite", "Ketu": "Cat's Eye"
+        }
+
+        return GEMSTONE_TEMPLATES.map(template => {
+            // Determine Planet Name from Gem Name (Reverse map or manual check)
+            let planetName = "";
+            let suitable = false;
+            let reason = "";
+
+            if (template.name === "Ruby") planetName = "Sun";
+            if (template.name === "Pearl") planetName = "Moon";
+            if (template.name === "Red Coral") planetName = "Mars";
+            if (template.name === "Emerald") planetName = "Mercury";
+            if (template.name === "Yellow Sapphire") planetName = "Jupiter";
+            if (template.name === "Diamond") planetName = "Venus";
+            if (template.name === "Blue Sapphire") planetName = "Saturn";
+            if (template.name === "Hessonite") planetName = "Rahu";
+            if (template.name === "Cat's Eye") planetName = "Ketu";
+
+            // Logic
+            if (planetName === lords[1]) {
+                suitable = true;
+                reason = `Lagna Lord (${planetName}) - Highly beneficial for health and overall success.`;
+            } else if (planetName === lords[9]) {
+                suitable = true;
+                reason = `9th Lord (${planetName}) - Best for luck and fortune (Bhagya).`;
+            } else if (planetName === lords[5]) {
+                suitable = true;
+                reason = `5th Lord (${planetName}) - Good for intelligence and creativity.`;
+            } else if ([lords[6], lords[8], lords[12]].includes(planetName)) {
+                suitable = false;
+                reason = `Lord of difficult house (6/8/12). Consult astrologer before wearing.`;
+            } else {
+                suitable = false;
+                reason = `Neutral or mixed effects. Requires detailed analysis.`;
+            }
+
+            // Rahu/Ketu special logic (simplified)
+            if (planetName === "Rahu" || planetName === "Ketu") {
+                suitable = false;
+                reason = "Nodes require specific placement analysis. Proceed with caution.";
+            }
+
+            // Override for Yogakaraka (Example: Saturn for Libra/Taurus)
+            // Simplified Yogakaraka check: If planet rules (Kendra AND Trikona)
+            // Need robust check. For now, leave as basic functional benefic check (1,5,9).
+
+            return {
+                ...template,
+                planet: planetName,
+                suitable,
+                reason
+            };
+        });
+    }, [userData]);
 
     const suitableGems = GEMSTONE_DATA.filter(g => g.suitable)
     const cautionGems = GEMSTONE_DATA.filter(g => !g.suitable)

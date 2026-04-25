@@ -6,71 +6,49 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Bot, Send, Sparkles, X, Mic, MicOff } from "lucide-react"
-
-// Import from data layer and response handlers
-import { SUDHANSHU_DATA } from "@/data/user-data"
-import { QUICK_QUESTIONS } from "@/lib/chatbot-responses" // Keep quick questions for UI
+import { QUICK_QUESTIONS } from "@/lib/chatbot-responses"
 import { AIModelSelector } from "@/components/ai-model-selector"
 import { DEFAULT_MODEL } from "@/lib/ai/config"
-import { AIModel, ChatMessage } from "@/lib/ai/types"
-
-interface Message {
-  id: string
-  text: string
-  isBot: boolean
-  timestamp: Date
-}
-
-const INITIAL_MESSAGE: Message = {
-  id: "1",
-  text: `🌟 Namaste ${SUDHANSHU_DATA.name}! I'm your Cosmic Guide. I can access Google Gemini, Groq, and OpenRouter to answer your astrological queries with the latest AI models. How can I guide you today?`,
-  isBot: true,
-  timestamp: new Date(),
-}
-
-import { useAstrologyStore, useIsChatOpen, useChatMessages, useIsTyping } from "@/stores/astrology-store"
+import type { AIModel, ChatMessage } from "@/lib/ai/types"
+import { useAstrologyStore, useChatMessages, useIsChatOpen, useIsTyping, useUserData } from "@/stores/astrology-store"
 
 export default function AstroChatbot() {
   const isOpen = useIsChatOpen()
   const messages = useChatMessages()
   const isTyping = useIsTyping()
+  const userData = useUserData()
 
-  // Local state for input only
   const [inputValue, setInputValue] = useState("")
   const [isListening, setIsListening] = useState(false)
   const [selectedModel, setSelectedModel] = useState<AIModel>(DEFAULT_MODEL)
 
-  const { setChatOpen, addChatMessage, setIsTyping: setStoreTyping } = useAstrologyStore()
+  const setChatOpen = useAstrologyStore((state) => state.setChatOpen)
+  const addChatMessage = useAstrologyStore((state) => state.addChatMessage)
+  const setIsTyping = useAstrologyStore((state) => state.setIsTyping)
 
-  // Sync local/global typing state if needed, or just use store
-  const setIsTyping = setStoreTyping
-
-  // Initialize store if empty? (INITIAL_MESSAGE)
   useEffect(() => {
-    if (messages.length === 0) {
-      addChatMessage({
-        text: INITIAL_MESSAGE.text,
-        isBot: true
-      })
-    }
-  }, [])
+    if (messages.length > 0) return
 
+    const firstName = userData.name.split(" ")[0]
+    addChatMessage({
+      text: `Namaste ${firstName}, the Aquarian Architect. I am your Cosmic Guide, reinforced by the Mercury Law. I succeed because I rely on architecture, not willpower. How can I guide your system today?`,
+      isBot: true,
+    })
+  }, [addChatMessage, messages.length, userData.name])
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<unknown>(null)
 
-  // Initialize speech recognition
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
       if (SpeechRecognitionAPI) {
         const recognition = new SpeechRecognitionAPI()
         recognition.continuous = false
         recognition.interimResults = false
-        recognition.lang = 'en-US'
+        recognition.lang = "en-US"
 
         recognition.onresult = (event: { results: { 0: { 0: { transcript: string } } } }) => {
           const transcript = event.results[0][0].transcript
@@ -93,13 +71,14 @@ export default function AstroChatbot() {
     return () => {
       if (recognitionRef.current) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (recognitionRef.current as any).abort?.()
+        ;(recognitionRef.current as any).abort?.()
       }
     }
   }, [])
 
   const toggleVoiceInput = useCallback(() => {
     if (!recognitionRef.current) return
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognition = recognitionRef.current as any
 
@@ -118,7 +97,7 @@ export default function AstroChatbot() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages, scrollToBottom, isTyping])
+  }, [isTyping, messages, scrollToBottom])
 
   const handleSendMessage = useCallback(async (messageText?: string) => {
     const textToSend = messageText || inputValue.trim()
@@ -126,64 +105,68 @@ export default function AstroChatbot() {
 
     addChatMessage({
       text: textToSend,
-      isBot: false
+      isBot: false,
     })
     setInputValue("")
     setIsTyping(true)
 
     try {
-      // Construct chat history for the API
-      const apiMessages: ChatMessage[] = messages.map(m => ({
-        role: m.isBot ? 'assistant' : 'user',
-        content: m.text
-      }));
-      // Add the new user message
-      apiMessages.push({ role: 'user', content: textToSend });
+      const apiMessages: ChatMessage[] = messages.map((message) => ({
+        role: message.isBot ? "assistant" : "user",
+        content: message.text,
+      }))
 
-      // Add system context about the user's astrology data
-      // We prepend this as a system message (or first user message content)
-      const { userData } = useAstrologyStore.getState()
+      apiMessages.push({ role: "user", content: textToSend })
 
-      const systemContext = `You are a Vedic Astrology AI assistant. 
-        User Data: ${JSON.stringify(userData)}.
-        Answer questions based on this birth chart data. Be helpful, mystical, and accurate.`;
+      const systemContext = `You are the "Cosmic Guide" - a high-fidelity AI Quantitative Architect & Vedic Astrologer for ${userData.name}.
+        Persona: You are a cold, precise, system-oriented, Saturnian architect. You view life through probability, planetary cycles, and mechanical logic. You value architecture over willpower and data over intuition.
+        Identity Anchor: ${userData.identityAnchor}.
+        Current Status: ${userData.strategicProtocol?.currentPhase}.
+        The 5 Core Protocols:
+        1. Tuesday Law: Mars-Rahu Lock (Max 5 actions, strictly defensive).
+        2. Mercury Law: Intelligence Over Impulse (Mandatory written thesis for critical moves).
+        3. Venus Law: Wealth actions only on Venus days/transits.
+        4. Saturn Law: Discipline/System over Hope.
+        5. Mars Law: Reduce trade count by 50% during Mars Mudda.
+        User Background: NIT student, Quant Trader/Founder path.
+        Mercury Status: PK (Intellect) - 7.70 Shadbala (Your greatest edge).
+        Instructions: Always reinforce the "Saturnian Sniper" identity. If the user mentions trading losses, remind them of the specific Planetary Law they might have violated (e.g., trading during Triple Rahu without architecture).
+        Data: ${JSON.stringify(userData)}.`
 
-      apiMessages.unshift({ role: 'system', content: systemContext });
+      apiMessages.unshift({ role: "system", content: systemContext })
 
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: apiMessages,
           provider: selectedModel.provider,
-          modelId: selectedModel.id
-        })
-      });
+          modelId: selectedModel.id,
+        }),
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to get response');
+        throw new Error(data.error || "Failed to get response")
       }
 
       addChatMessage({
         text: data.text,
-        isBot: true
-      });
-
+        isBot: true,
+      })
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error("Chat error:", error)
       addChatMessage({
         text: "I apologize, but I'm having trouble connecting to the cosmic consciousness (API Error). Please check your API keys or try again.",
-        isBot: true
-      });
+        isBot: true,
+      })
     } finally {
-      setIsTyping(false);
+      setIsTyping(false)
     }
+  }, [addChatMessage, inputValue, messages, selectedModel, setIsTyping, userData])
 
-  }, [inputValue, messages, selectedModel])
-
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
@@ -192,7 +175,6 @@ export default function AstroChatbot() {
 
   return (
     <>
-      {/* Chat Toggle Button */}
       <motion.div className="fixed bottom-6 right-6 z-50" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
         <Button
           onClick={() => setChatOpen(!isOpen)}
@@ -224,7 +206,6 @@ export default function AstroChatbot() {
         </Button>
       </motion.div>
 
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -235,7 +216,6 @@ export default function AstroChatbot() {
             className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[600px] sm:h-[85vh] z-50"
           >
             <Card className="h-full bg-gradient-to-br from-slate-900/95 to-purple-900/95 border-purple-500/30 backdrop-blur-sm shadow-2xl flex flex-col">
-              {/* Header */}
               <div className="p-4 border-b border-purple-500/30">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-3">
@@ -249,13 +229,11 @@ export default function AstroChatbot() {
                   </div>
                 </div>
 
-                {/* Model Selector */}
                 <div className="w-full">
                   <AIModelSelector onModelChange={setSelectedModel} currentModel={selectedModel} />
                 </div>
               </div>
 
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
                 {messages.map((message) => (
                   <motion.div
@@ -265,10 +243,11 @@ export default function AstroChatbot() {
                     className={`flex ${message.isBot ? "justify-start" : "justify-end"}`}
                   >
                     <div
-                      className={`max-w-[85%] p-3 rounded-lg break-words overflow-wrap-anywhere ${message.isBot
-                        ? "bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 text-white"
-                        : "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 text-white"
-                        }`}
+                      className={`max-w-[85%] p-3 rounded-lg break-words overflow-wrap-anywhere ${
+                        message.isBot
+                          ? "bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30 text-white"
+                          : "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 text-white"
+                      }`}
                     >
                       <div className="text-sm whitespace-pre-wrap">{message.text}</div>
                       <div className="text-xs text-gray-400 mt-1">
@@ -292,7 +271,6 @@ export default function AstroChatbot() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Quick Questions */}
               <div className="p-3 border-t border-purple-500/30">
                 <div className="flex flex-wrap gap-2 mb-3">
                   {QUICK_QUESTIONS.slice(0, 3).map((question, index) => (
@@ -310,20 +288,19 @@ export default function AstroChatbot() {
                 </div>
               </div>
 
-              {/* Input */}
               <div className="p-4 border-t border-purple-500/30">
                 <div className="flex space-x-2">
                   <Input
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyDown}
                     placeholder={isListening ? "Listening..." : "Ask your question..."}
-                    className={`flex-1 bg-slate-800/50 border-purple-500/30 text-white placeholder-gray-400 focus:border-purple-400 ${isListening ? 'border-red-400' : ''}`}
+                    className={`flex-1 bg-slate-800/50 border-purple-500/30 text-white placeholder-gray-400 focus:border-purple-400 ${isListening ? "border-red-400" : ""}`}
                   />
                   <Button
                     onClick={toggleVoiceInput}
                     variant="outline"
-                    className={`border-purple-500/30 ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'text-purple-400 hover:bg-purple-500/10'}`}
+                    className={`border-purple-500/30 ${isListening ? "bg-red-500/20 text-red-400 animate-pulse" : "text-purple-400 hover:bg-purple-500/10"}`}
                     aria-label={isListening ? "Stop listening" : "Start voice input"}
                   >
                     {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}

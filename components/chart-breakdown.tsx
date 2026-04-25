@@ -14,30 +14,47 @@ import VarshphalChart from "@/components/varshphal-chart"
 import NorthIndianChart from "@/components/north-indian-chart"
 import { calculateAllDivisionalCharts, DivisionalResult } from "@/lib/divisional-engine"
 import { calculateFullShadbala, ShadbalaResult } from "@/lib/shadbala-engine"
-import { calculateTransits, calculateTransitToNatalAspects } from "@/lib/transit-engine"
+import { calculateTransits, getTransitToNatalAspects as calculateTransitToNatalAspects } from "@/lib/transit-engine"
 import { checkYogas, groupYogasByCategory } from "@/lib/yoga-engine"
 import { useAstrologyStore } from "@/stores/astrology-store"
-import { Sparkles, Gem, Activity, Heart, Shield } from "lucide-react"
+import { Sparkles, Gem, Activity, Heart, Shield, CheckCircle2 } from "lucide-react"
 
 function ChartBreakdown() {
   const { userData } = useAstrologyStore()
   const [selectedHouse, setSelectedHouse] = useState<number | null>(null)
   const [activeChart, setActiveChart] = useState("d1")
 
-  // Reconstruct planetary data from the hardcoded analysis for dynamic calculation
-  // Base Longitudes (Sudhanshu's Chart Data)
-  const planetaryLongitudes = useMemo(() => ({
-    "Ascendant": 315.00, // Aquarius Lagna (Approx)
-    "Sun": 169.00,       // Virgo ~19 deg (conjunct Ketu)
-    "Moon": 315.72,      // Aquarius 15°43'
-    "Mars": 24.60,       // Aries 24°36'
-    "Mercury": 194.63,   // Libra 14°38'
-    "Jupiter": 183.53,   // Libra 3°32'
-    "Venus": 217.46,     // Scorpio 7°28'
-    "Saturn": 105.99,    // Cancer 15°59'
-    "Rahu": 349.36,      // Pisces 19°22'
-    "Ketu": 169.36       // Virgo 19°22'
-  }), []);
+  // Reconstruct planetary data from the dynamic user data
+  const planetaryLongitudes = useMemo(() => {
+    if (!userData || !userData.planetaryPositions) {
+      // Fallback to Sudhanshu's data if no user data (shouldn't happen given parent checks)
+      return {
+        "Ascendant": 315.00,
+        "Sun": 169.00,
+        "Moon": 315.72,
+        "Mars": 24.60,
+        "Mercury": 194.63,
+        "Jupiter": 183.53,
+        "Venus": 217.46,
+        "Saturn": 105.99,
+        "Rahu": 349.36,
+        "Ketu": 169.36
+      };
+    }
+
+    return {
+      "Ascendant": userData.lagnaLongitude || 0,
+      "Sun": userData.planetaryPositions.sun.absoluteLongitude || 0,
+      "Moon": userData.planetaryPositions.moon.absoluteLongitude || 0,
+      "Mars": userData.planetaryPositions.mars.absoluteLongitude || 0,
+      "Mercury": userData.planetaryPositions.mercury.absoluteLongitude || 0,
+      "Jupiter": userData.planetaryPositions.jupiter.absoluteLongitude || 0,
+      "Venus": userData.planetaryPositions.venus.absoluteLongitude || 0,
+      "Saturn": userData.planetaryPositions.saturn.absoluteLongitude || 0,
+      "Rahu": userData.planetaryPositions.rahu.absoluteLongitude || 0,
+      "Ketu": userData.planetaryPositions.ketu.absoluteLongitude || 0
+    };
+  }, [userData]);
 
   // Calculate All Divisional Charts
   const divisionalCharts = useMemo(() => {
@@ -76,7 +93,7 @@ function ChartBreakdown() {
   }, [planetaryLongitudes]);
 
   // Helper to convert engine result to component format
-  const getChartData = (vargaResult: Record<string, DivisionalResult>) => {
+  const getChartData = (vargaResult: Record<string, DivisionalResult>, isD1: boolean = false) => {
     // Short names map
     const shortNames: Record<string, string> = {
       "Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
@@ -113,7 +130,19 @@ function ChartBreakdown() {
       const houseNum = ((planetSignIndex - ascSignIndex + 12) % 12) + 1;
 
       if (houses[houseNum]) {
-        houses[houseNum].planets.push(shortNames[planet] || planet.substring(0, 2));
+        let planetStr = shortNames[planet] || planet.substring(0, 2);
+
+        // Add verification badge for D1 chart
+        if (isD1 && userData?.planetaryPositions) {
+          const key = planet.toLowerCase();
+          // Typescript safety check since planetaryPositions might not have all keys strictly typed as index
+          const pData = (userData.planetaryPositions as any)[key];
+          if (pData?.verificationStatus === 'verified') {
+            planetStr += "✓";
+          }
+        }
+
+        houses[houseNum].planets.push(planetStr);
       }
     });
 
@@ -557,7 +586,7 @@ function ChartBreakdown() {
 
   // Computed Dynamic Charts
   const charts = useMemo(() => ({
-    d1: { ...getChartData(divisionalCharts.D1), name: "Lagna Chart (D1) - Self" },
+    d1: { ...getChartData(divisionalCharts.D1, true), name: "Lagna Chart (D1) - Self" },
     d9: { ...getChartData(divisionalCharts.D9), name: "Navamsha (D9) - Destiny/Spouse" },
     d10: { ...getChartData(divisionalCharts.D10), name: "Dasamsa (D10) - Career" },
     d3: { ...getChartData(divisionalCharts.D3), name: "Drekkana (D3) - Siblings" },
@@ -622,11 +651,7 @@ function ChartBreakdown() {
               <Sparkles className="w-4 h-4 mr-2" />
               Ask AI
             </Button>
-            <PDFExportButton
-              targetId="vedic-chart-content"
-              filename="vedic-chart-analysis"
-              title="Export Chart"
-            />
+            <PDFExportButton />
           </div>
         </div>
 
@@ -1119,7 +1144,7 @@ function ChartBreakdown() {
                     <div key={idx} className="p-3 bg-slate-800/50 rounded border border-slate-700">
                       <div className="font-medium text-pink-300">{gem.gemstone}</div>
                       <div className="text-xs text-gray-400 mt-1">
-                        Wear on {gem.finger} in {gem.metal} on {gem.day}.
+                        Wear on {gem.finger} in {gem.metal} { (gem as any).day ? `on ${ (gem as any).day}` : ''}.
                       </div>
                       <div className="text-sm text-gray-300 mt-2 italic">"{gem.reason}"</div>
                     </div>
@@ -1139,26 +1164,36 @@ function ChartBreakdown() {
                     <div key={idx} className="p-3 bg-slate-800/50 rounded border border-slate-700">
                       <div className="font-semibold text-yellow-200">{m.deity}</div>
                       <div className="text-sm font-mono bg-slate-900 p-2 rounded mt-1 text-yellow-100">{m.mantra}</div>
-                      <div className="text-xs text-gray-400 mt-1">Recite {m.count} times in the {m.time.toLowerCase()}.</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        { (m as any).count ? `Recite ${ (m as any).count} times` : '' }
+                        { (m as any).time ? ` in the ${ (m as any).time.toLowerCase()}` : '' }
+                      </div>
                       <div className="text-xs text-gray-500 mt-1">{m.purpose}</div>
                     </div>
                   ))}
                 </div>
               </Card>
 
-              {/* Lifestyle */}
+              {/* Lifestyle (Mapped from Health Protocol) */}
               <Card className="p-6 bg-slate-900/50 border-slate-700 md:col-span-2">
                 <div className="flex items-center gap-2 mb-4">
                   <Activity className="w-5 h-5 text-green-400" />
-                  <h3 className="text-lg font-semibold text-white">Lifestyle & Habits</h3>
+                  <h3 className="text-lg font-semibold text-white">Health & Lifestyle Protocol</h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {userData?.remedies?.lifestyle.map((l, idx) => (
-                    <div key={idx} className="flex gap-3 items-start p-3 bg-slate-800/50 rounded">
-                      <Heart className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                  {userData?.healthProtocol?.dailyMinimum.map((item, idx) => (
+                    <div key={`min-${idx}`} className="flex gap-3 items-start p-3 bg-slate-800/50 rounded">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
                       <div>
-                        <div className="font-medium text-gray-200">{l.description}</div>
-                        <div className="text-sm text-gray-400">{l.reason}</div>
+                        <div className="font-medium text-gray-200">{item}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {userData?.healthProtocol?.diet.map((item, idx) => (
+                    <div key={`diet-${idx}`} className="flex gap-3 items-start p-3 bg-slate-800/50 rounded">
+                      <Heart className="w-4 h-4 text-pink-500 mt-1 shrink-0" />
+                      <div>
+                        <div className="font-medium text-gray-200">Diet: {item}</div>
                       </div>
                     </div>
                   ))}

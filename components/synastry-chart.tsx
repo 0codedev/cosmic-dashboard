@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -171,37 +171,42 @@ export default function SynastryChart() {
                     </Button>
                 </div>
 
-                {showPartnerInput && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="grid md:grid-cols-3 gap-4 mt-4 p-4 bg-slate-800/50 rounded-lg"
-                    >
-                        <div>
-                            <Label className="text-gray-300">Partner Name</Label>
-                            <Input
-                                value={partnerName}
-                                onChange={(e) => setPartnerName(e.target.value)}
-                                placeholder="Enter name"
-                                className="bg-slate-900/50 border-pink-500/30"
-                            />
-                        </div>
-                        <div>
-                            <Label className="text-gray-300">Date of Birth</Label>
-                            <Input
-                                type="date"
-                                value={partnerDOB}
-                                onChange={(e) => setPartnerDOB(e.target.value)}
-                                className="bg-slate-900/50 border-pink-500/30"
-                            />
-                        </div>
-                        <div className="flex items-end">
-                            <Button className="w-full bg-pink-500 hover:bg-pink-600">
-                                Generate Chart
-                            </Button>
-                        </div>
-                    </motion.div>
-                )}
+                <AnimatePresence>
+                    {showPartnerInput && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                            style={{ overflow: "hidden" }}
+                            className="grid md:grid-cols-3 gap-4 mt-4 p-4 bg-slate-800/50 rounded-lg"
+                        >
+                            <div>
+                                <Label className="text-gray-300">Partner Name</Label>
+                                <Input
+                                    value={partnerName}
+                                    onChange={(e) => setPartnerName(e.target.value)}
+                                    placeholder="Enter name"
+                                    className="bg-slate-900/50 border-pink-500/30"
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-gray-300">Date of Birth</Label>
+                                <Input
+                                    type="date"
+                                    value={partnerDOB}
+                                    onChange={(e) => setPartnerDOB(e.target.value)}
+                                    className="bg-slate-900/50 border-pink-500/30"
+                                />
+                            </div>
+                            <div className="flex items-end">
+                                <Button className="w-full bg-pink-500 hover:bg-pink-600">
+                                    Generate Chart
+                                </Button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </Card>
 
             {/* Compatibility Overview */}
@@ -290,8 +295,8 @@ export default function SynastryChart() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: idx * 0.05 }}
                             className={`p-3 rounded-lg border ${aspect.nature === "harmonious" ? "bg-green-900/10 border-green-500/20" :
-                                    aspect.nature === "challenging" ? "bg-red-900/10 border-red-500/20" :
-                                        "bg-blue-900/10 border-blue-500/20"
+                                aspect.nature === "challenging" ? "bg-red-900/10 border-red-500/20" :
+                                    "bg-blue-900/10 border-blue-500/20"
                                 }`}
                         >
                             <div className="flex items-center justify-between mb-1">

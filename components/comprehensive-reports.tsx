@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -332,7 +332,6 @@ export default function ComprehensiveReports() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {REPORT_TYPES.map((report, idx) => (
                     <motion.div
-                        layout
                         key={report.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -352,7 +351,7 @@ export default function ComprehensiveReports() {
                             )}
 
                             <div className="p-5">
-                                <motion.div layout="position" className="flex items-start gap-3 mb-3">
+                                <motion.div className="flex items-start gap-3 mb-3">
                                     <div className={`p-2 rounded-lg ${report.id === 'kundli' ? 'bg-amber-500/20 text-amber-400' :
                                         report.id === 'marriage' ? 'bg-pink-500/20 text-pink-400' :
                                             report.id === 'career' ? 'bg-blue-500/20 text-blue-400' :
@@ -367,31 +366,34 @@ export default function ComprehensiveReports() {
                                     </div>
                                 </motion.div>
 
-                                <motion.div layout="position" className="flex items-center justify-between mb-4">
+                                <motion.div className="flex items-center justify-between mb-4">
                                     <Badge className="bg-slate-700 text-gray-300">{report.pages}</Badge>
                                     <span className="text-green-400 font-semibold">{report.price}</span>
                                 </motion.div>
 
                                 {/* Expanded Sections */}
-                                {selectedReport === report.id && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        style={{ overflow: "hidden" }}
-                                        className="border-t border-slate-700 pt-4 mt-4"
-                                    >
-                                        <h4 className="text-sm font-medium text-indigo-400 mb-2">Included Sections:</h4>
-                                        <ul className="space-y-1">
-                                            {report.sections.map((section, i) => (
-                                                <li key={i} className="text-xs text-gray-400 flex items-center gap-2">
-                                                    <span className="w-1 h-1 bg-indigo-400 rounded-full"></span>
-                                                    {section}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </motion.div>
-                                )}
+                                <AnimatePresence>
+                                    {selectedReport === report.id && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: "auto" }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                                            style={{ overflow: "hidden" }}
+                                            className="border-t border-slate-700 pt-4 mt-4"
+                                        >
+                                            <h4 className="text-sm font-medium text-indigo-400 mb-2">Included Sections:</h4>
+                                            <ul className="space-y-1">
+                                                {report.sections.map((section, i) => (
+                                                    <li key={i} className="text-xs text-gray-400 flex items-center gap-2">
+                                                        <span className="w-1 h-1 bg-indigo-400 rounded-full"></span>
+                                                        {section}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
 
                                 <Button
                                     className={`w-full mt-4 ${generated.includes(report.id)

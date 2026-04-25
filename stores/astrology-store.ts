@@ -80,7 +80,7 @@ export const useAstrologyStore = create<AstrologyState>()(
         (set, get) => ({
             // Initial State
             userData: SUDHANSHU_DATA,
-            activeTab: 'overview',
+            activeTab: 'mission',
             isChatOpen: false,
             isMobileMenuOpen: false,
             chatMessages: [],
@@ -150,6 +150,8 @@ export const useActiveTab = () => useAstrologyStore((state) => state.activeTab)
 export const useIsChatOpen = () => useAstrologyStore((state) => state.isChatOpen)
 export const useChatMessages = () => useAstrologyStore((state) => state.chatMessages)
 export const useIsTyping = () => useAstrologyStore((state) => state.isTyping)
+export const useStoreSetUserData = () => useAstrologyStore((state) => state.setUserData)
+export const useStoreResetUserData = () => useAstrologyStore((state) => state.resetUserData)
 
 // Actions (stable references with shallow comparison to prevent infinite loops)
 export const useAstrologyActions = () => useAstrologyStore(

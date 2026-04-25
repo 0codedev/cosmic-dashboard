@@ -1,14 +1,13 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
-import { Star, Sparkles, Crown, Moon, Coins, Zap } from "lucide-react"
+import { Star, Sparkles, Crown, Moon, Coins, Zap, CheckCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useState, useMemo } from "react"
 import DoshaAnalysis from "@/components/dosha-analysis"
 import { checkYogas, calculateYogaStrength, groupYogasByCategory, YogaResult } from "@/lib/yoga-engine"
-import { useUser } from "@/contexts/user-context"
-import { SUDHANSHU_DATA } from "@/data/user-data"
+import { useResolvedUserData } from "@/contexts/user-context"
 
 // Category icons and colors
 const CATEGORY_STYLES: Record<string, { icon: React.ReactNode; color: string; bgColor: string }> = {
@@ -21,10 +20,7 @@ const CATEGORY_STYLES: Record<string, { icon: React.ReactNode; color: string; bg
 
 export default function YogasAspects() {
   const [selectedYoga, setSelectedYoga] = useState<string | null>(null)
-  const { userData } = useUser()
-
-  // Use context data or fallback to default
-  const activeData = userData || SUDHANSHU_DATA
+  const activeData = useResolvedUserData()
 
   // Calculate yogas dynamically from planetary positions
   const dynamicYogas = useMemo(() => {
@@ -57,6 +53,7 @@ export default function YogasAspects() {
   const authenticYogas = [
     {
       name: "Gajakesari Yoga",
+      verified: true,
       strength: "Strong",
       formation: "Jupiter in 9th house, Moon in 1st house",
       effects: "Wisdom, popularity, prosperity, and leadership qualities",
@@ -83,6 +80,7 @@ export default function YogasAspects() {
     },
     {
       name: "Raj Yoga (9th-10th Lords)",
+      verified: true,
       strength: "Excellent",
       formation: "Jupiter (9th lord) and Mercury conjunct in 9th house",
       effects: "Authority, power, recognition, and success in career",
@@ -330,7 +328,15 @@ export default function YogasAspects() {
                     <div className="flex items-center space-x-3">
                       <span className="text-2xl">{yoga.logo}</span>
                       <div>
-                        <h3 className={`text-lg font-bold text-${yoga.color}-400`}>{yoga.name}</h3>
+                        <h3 className={`text-lg font-bold text-${yoga.color}-400 flex items-center gap-2`}>
+                          {yoga.name}
+                          {(yoga as any).verified && (
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] px-1 py-0.5 h-5">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Verified
+                            </Badge>
+                          )}
+                        </h3>
                         <Badge
                           className={`bg-${yoga.color}-500/20 text-${yoga.color}-400 border-${yoga.color}-500/30 mt-1`}
                         >
@@ -374,45 +380,48 @@ export default function YogasAspects() {
                     </div>
                   </div>
 
-                  {selectedYoga === yoga.name && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      style={{ overflow: "hidden" }}
-                      className="space-y-4 border-t border-gray-600 pt-4"
-                    >
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <h5 className="font-semibold text-green-400 mb-2">Positive Effects</h5>
-                          <ul className="space-y-1">
-                            {yoga.positiveEffects.map((effect, i) => (
-                              <li key={i} className="flex items-start space-x-2">
-                                <span className="text-green-400 mt-1">•</span>
-                                <span className="text-gray-300 text-sm">{effect}</span>
-                              </li>
-                            ))}
-                          </ul>
+                  <AnimatePresence>
+                    {selectedYoga === yoga.name && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        style={{ overflow: "hidden" }}
+                        className="space-y-4 border-t border-gray-600 pt-4"
+                      >
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <h5 className="font-semibold text-green-400 mb-2">Positive Effects</h5>
+                            <ul className="space-y-1">
+                              {yoga.positiveEffects.map((effect, i) => (
+                                <li key={i} className="flex items-start space-x-2">
+                                  <span className="text-green-400 mt-1">•</span>
+                                  <span className="text-gray-300 text-sm">{effect}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div>
+                            <h5 className="font-semibold text-purple-400 mb-2">Manifestations</h5>
+                            <ul className="space-y-1">
+                              {yoga.manifestations.map((manifestation, i) => (
+                                <li key={i} className="flex items-start space-x-2">
+                                  <span className="text-purple-400 mt-1">•</span>
+                                  <span className="text-gray-300 text-sm">{manifestation}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         </div>
 
-                        <div>
-                          <h5 className="font-semibold text-purple-400 mb-2">Manifestations</h5>
-                          <ul className="space-y-1">
-                            {yoga.manifestations.map((manifestation, i) => (
-                              <li key={i} className="flex items-start space-x-2">
-                                <span className="text-purple-400 mt-1">•</span>
-                                <span className="text-gray-300 text-sm">{manifestation}</span>
-                              </li>
-                            ))}
-                          </ul>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-gray-300 text-sm italic">{yoga.description}</p>
                         </div>
-                      </div>
-
-                      <div className="bg-slate-800/50 rounded-lg p-3">
-                        <p className="text-gray-300 text-sm italic">{yoga.description}</p>
-                      </div>
-                    </motion.div>
-                  )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </Card>
             </motion.div>

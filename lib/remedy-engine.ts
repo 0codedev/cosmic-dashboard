@@ -1,4 +1,4 @@
-import { AstrologyUserData, PlanetName, ZodiacSign } from "@/types/astrology";
+import { AstrologyUserData, PlanetName } from "@/types/astrology";
 
 // --- Types for Remedies ---
 

@@ -1,10 +1,19 @@
-+import { normalize } from '@/lib/utils/astro-math';
 import { ZODIAC_SIGNS } from '@/data/interpretation/signs';
 
+function normalize(deg: number): number {
+    deg = deg % 360;
+    if (deg < 0) deg += 360;
+    return deg;
+}
+
+function normalizeName(name: string): string {
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+}
+
 export type PlanetStrength = {
-    score: number; // 0 to 100+
-    dignity: string; // "Exalted", "Moolatrikona", "Own Sign", "Friend", "Neutral", "Enemy", "Debilitated"
-    percent: string; // "85%"
+    score: number;
+    dignity: string;
+    percent: string;
 };
 
 // Deep Exaltation Degrees
@@ -69,8 +78,8 @@ export function calculateStrength(planetName: string, planetLon: number, isRetro
         score += 20;
         dignity = "Own Sign";
     } else if (signLord) {
-        // @ts-ignore
-        const relation = FRIENDSHIPS[normalizeName(planetName)]?.[signLord] || 0;
+        const planetFriends = FRIENDSHIPS[normalizeName(planetName)];
+        const relation = planetFriends?.[signLord] ?? 0;
         if (relation === 1) {
             score += 10;
             if (dignity === "Neutral") dignity = "Friend's Sign";
@@ -99,9 +108,4 @@ export function calculateStrength(planetName: string, planetLon: number, isRetro
         dignity,
         percent: `${score}%`
     };
-}
-
-function normalizeName(name: string) {
-    // Handle "Sun" vs "sun" etc
-    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }

@@ -11,6 +11,9 @@ import {
     Minus,
     Info
 } from "lucide-react"
+import { useAstrologyStore } from "@/stores/astrology-store"
+import { calculateFullShadbala } from "@/lib/shadbala-engine"
+import { useMemo } from "react"
 
 interface PlanetStrength {
     planet: string
@@ -26,125 +29,8 @@ interface PlanetStrength {
     aspects: string[]
 }
 
-const PLANET_STRENGTHS: PlanetStrength[] = [
-    {
-        planet: "Sun",
-        symbol: "☉",
-        sign: "Virgo",
-        degree: 14.5,
-        status: "friend",
-        strength: 65,
-        shadbala: 1.2,
-        dignityPoints: 8,
-        retrograde: false,
-        combusted: false,
-        aspects: ["Saturn aspects", "Jupiter trines"]
-    },
-    {
-        planet: "Moon",
-        symbol: "☽",
-        sign: "Aquarius",
-        degree: 22.3,
-        status: "neutral",
-        strength: 72,
-        shadbala: 1.4,
-        dignityPoints: 6,
-        retrograde: false,
-        combusted: false,
-        aspects: ["Mars sextiles"]
-    },
-    {
-        planet: "Mars",
-        symbol: "♂",
-        sign: "Aries",
-        degree: 8.7,
-        status: "own",
-        strength: 92,
-        shadbala: 1.8,
-        dignityPoints: 12,
-        retrograde: false,
-        combusted: false,
-        aspects: ["Jupiter aspects"]
-    },
-    {
-        planet: "Mercury",
-        symbol: "☿",
-        sign: "Libra",
-        degree: 5.2,
-        status: "friend",
-        strength: 68,
-        shadbala: 1.3,
-        dignityPoints: 7,
-        retrograde: false,
-        combusted: false,
-        aspects: ["Venus conjuncts"]
-    },
-    {
-        planet: "Jupiter",
-        symbol: "♃",
-        sign: "Libra",
-        degree: 18.4,
-        status: "neutral",
-        strength: 58,
-        shadbala: 1.1,
-        dignityPoints: 5,
-        retrograde: false,
-        combusted: false,
-        aspects: ["Mercury conjuncts"]
-    },
-    {
-        planet: "Venus",
-        symbol: "♀",
-        sign: "Scorpio",
-        degree: 12.8,
-        status: "enemy",
-        strength: 42,
-        shadbala: 0.9,
-        dignityPoints: 3,
-        retrograde: false,
-        combusted: false,
-        aspects: ["Mars rules sign"]
-    },
-    {
-        planet: "Saturn",
-        symbol: "♄",
-        sign: "Cancer",
-        degree: 28.1,
-        status: "debilitated",
-        strength: 35,
-        shadbala: 0.7,
-        dignityPoints: 2,
-        retrograde: true,
-        combusted: false,
-        aspects: ["Moon aspects", "Neecha Bhanga"]
-    },
-    {
-        planet: "Rahu",
-        symbol: "☊",
-        sign: "Pisces",
-        degree: 15.6,
-        status: "neutral",
-        strength: 55,
-        shadbala: 1.0,
-        dignityPoints: 5,
-        retrograde: true,
-        combusted: false,
-        aspects: ["Jupiter disposits"]
-    },
-    {
-        planet: "Ketu",
-        symbol: "☋",
-        sign: "Virgo",
-        degree: 15.6,
-        status: "neutral",
-        strength: 48,
-        shadbala: 0.95,
-        dignityPoints: 4,
-        retrograde: true,
-        combusted: false,
-        aspects: ["Mercury disposits"]
-    }
-]
+// Dynamic logic moved inside component
+const PLANET_STRENGTHS: PlanetStrength[] = []
 
 export default function PlanetaryStrength() {
     const getStatusColor = (status: string) => {
@@ -172,7 +58,93 @@ export default function PlanetaryStrength() {
         return <TrendingDown className="w-4 h-4 text-red-400" />
     }
 
-    const sortedPlanets = [...PLANET_STRENGTHS].sort((a, b) => b.strength - a.strength)
+    const { userData } = useAstrologyStore()
+
+    // Dynamic Calculation of Strength
+    const sortedPlanets = useMemo(() => {
+        if (!userData || !userData.planetaryPositions) return []
+
+        // Simplify inputs for shadbala engine
+        const longitudes: Record<string, number> = {
+            Sun: userData.planetaryPositions.sun.absoluteLongitude || 0,
+            Moon: userData.planetaryPositions.moon.absoluteLongitude || 0,
+            Mars: userData.planetaryPositions.mars.absoluteLongitude || 0,
+            Mercury: userData.planetaryPositions.mercury.absoluteLongitude || 0,
+            Jupiter: userData.planetaryPositions.jupiter.absoluteLongitude || 0,
+            Venus: userData.planetaryPositions.venus.absoluteLongitude || 0,
+            Saturn: userData.planetaryPositions.saturn.absoluteLongitude || 0,
+            Rahu: userData.planetaryPositions.rahu.absoluteLongitude || 0,
+            Ketu: userData.planetaryPositions.ketu.absoluteLongitude || 0
+        }
+
+        const isRetrograde: Record<string, boolean> = {
+            Mars: userData.planetaryPositions.mars.retrograde || false,
+            Mercury: userData.planetaryPositions.mercury.retrograde || false,
+            Jupiter: userData.planetaryPositions.jupiter.retrograde || false,
+            Venus: userData.planetaryPositions.venus.retrograde || false,
+            Saturn: userData.planetaryPositions.saturn.retrograde || false,
+            Rahu: true,
+            Ketu: true,
+            Sun: false, Moon: false
+        }
+
+        // Calculate Shadbala
+        const shadbalaResults = calculateFullShadbala(
+            longitudes,
+            isRetrograde,
+            userData.lagnaLongitude || 0,
+            true, // Defaulting to Day Birth for now - TODO: Calculate from TOB
+            10 // Defaulting Moon phase
+        )
+
+        // Map to display format
+        return Object.entries(longitudes).map(([planet, lon]) => {
+            const data = (userData.planetaryPositions as any)[planet.toLowerCase()]
+            const strengthData = shadbalaResults[planet] || { total: 1.0, strengthPercent: 50 }; // Fallback
+
+            // Determine status (basic rule based)
+            let status: "exalted" | "own" | "friend" | "neutral" | "enemy" | "debilitated" = "neutral"
+            const sign = data.sign
+
+            // Allow override logic or simplified lookup
+            if (planet === "Sun" && sign === "Aries") status = "exalted"
+            else if (planet === "Sun" && sign === "Libra") status = "debilitated"
+            else if (planet === "Moon" && sign === "Taurus") status = "exalted"
+            else if (planet === "Moon" && sign === "Scorpio") status = "debilitated"
+            else if (planet === "Mars" && sign === "Capricorn") status = "exalted"
+            else if (planet === "Mars" && sign === "Cancer") status = "debilitated"
+            else if (planet === "Mercury" && sign === "Virgo") status = "exalted"
+            else if (planet === "Mercury" && sign === "Pisces") status = "debilitated"
+            else if (planet === "Jupiter" && sign === "Cancer") status = "exalted"
+            else if (planet === "Jupiter" && sign === "Capricorn") status = "debilitated"
+            else if (planet === "Venus" && sign === "Pisces") status = "exalted"
+            else if (planet === "Venus" && sign === "Virgo") status = "debilitated"
+            else if (planet === "Saturn" && sign === "Libra") status = "exalted"
+            else if (planet === "Saturn" && sign === "Aries") status = "debilitated"
+
+            const degreeVal = parseFloat(data.degree.split('°')[0])
+
+            return {
+                planet,
+                symbol: getPlanetSymbol(planet),
+                sign: data.sign,
+                degree: degreeVal,
+                status,
+                strength: strengthData.strengthPercent,
+                shadbala: strengthData.total,
+                dignityPoints: Math.round(strengthData.total * 1.5), // Approximation
+                retrograde: isRetrograde[planet],
+                combusted: false, // simplified
+                aspects: [] // simplified
+            } as PlanetStrength;
+        }).sort((a, b) => b.strength - a.strength)
+
+    }, [userData])
+
+    function getPlanetSymbol(p: string) {
+        const map: any = { Sun: "☉", Moon: "☽", Mars: "♂", Mercury: "☿", Jupiter: "♃", Venus: "♀", Saturn: "♄", Rahu: "☊", Ketu: "☋" }
+        return map[p] || "?"
+    }
 
     return (
         <div className="space-y-6">
@@ -269,10 +241,10 @@ export default function PlanetaryStrength() {
                         transition={{ delay: idx * 0.1 }}
                     >
                         <Card className={`p-4 ${planet.strength >= 60
-                                ? 'bg-green-900/10 border-green-500/20'
-                                : planet.strength >= 40
-                                    ? 'bg-slate-800/50 border-purple-500/20'
-                                    : 'bg-red-900/10 border-red-500/20'
+                            ? 'bg-green-900/10 border-green-500/20'
+                            : planet.strength >= 40
+                                ? 'bg-slate-800/50 border-purple-500/20'
+                                : 'bg-red-900/10 border-red-500/20'
                             }`}>
                             <div className="flex items-center gap-2 mb-3">
                                 <span className="text-2xl">{planet.symbol}</span>

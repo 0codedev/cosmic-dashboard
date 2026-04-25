@@ -67,12 +67,12 @@ const PLANET_CAREERS: Record<string, string[]> = {
     'Sun': ['Government', 'Administration', 'Politics', 'Medicine', 'Leadership roles'],
     'Moon': ['Hospitality', 'Nursing', 'Public relations', 'Travel', 'Food industry'],
     'Mars': ['Engineering', 'Military', 'Sports', 'Surgery', 'Real estate'],
-    'Mercury': ['Writing', 'Accounting', 'IT', 'Teaching', 'Business', 'Trading'],
+    'Mercury': ['Writing', 'Accounting', 'IT', 'Trading', 'Quantitative Finance', 'Algorithmic Trading'],
     'Jupiter': ['Law', 'Finance', 'Education', 'Consulting', 'Spirituality'],
     'Venus': ['Arts', 'Fashion', 'Entertainment', 'Luxury goods', 'Hospitality'],
     'Saturn': ['Mining', 'Agriculture', 'Manufacturing', 'Labor', 'Oil & gas'],
-    'Rahu': ['Technology', 'Foreign companies', 'Unconventional fields', 'Research'],
-    'Ketu': ['Spirituality', 'Research', 'Healing', 'Behind-the-scenes work']
+    'Rahu': ['Technology', 'Foreign companies', 'AI/ML Architecture', 'Research'],
+    'Ketu': ['Spirituality', 'Research', 'Cryptic Systems', 'Healing']
 };
 
 const DASHA_CAREER_EFFECTS: Record<string, { nature: string; activities: string[] }> = {

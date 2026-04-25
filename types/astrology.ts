@@ -15,6 +15,12 @@ export interface PlanetaryPosition {
     description: string
     retrograde?: boolean
     absoluteLongitude?: number
+    verification?: {
+        status: 'verified' | 'disputed' | 'unverified'
+        source?: string // e.g., "AstroArunPandit Report"
+        matchScore?: number // 0-100
+        notes?: string
+    }
 }
 
 export type PlanetName =
@@ -39,6 +45,10 @@ export interface Yoga {
     description: string
     strength: 'Weak' | 'Moderate' | 'Strong' | 'Excellent'
     effect: string
+    verification?: {
+        status: 'verified' | 'disputed' | 'unverified'
+        source?: string
+    }
 }
 
 // =============================================================================
@@ -148,6 +158,99 @@ export interface LifePredictions {
 // MAIN USER DATA TYPE
 // =============================================================================
 
+export type Nakshatra =
+    | 'Ashwini' | 'Bharani' | 'Krittika' | 'Rohini' | 'Mrigashira' | 'Ardra'
+    | 'Punarvasu' | 'Pushya' | 'Ashlesha' | 'Magha' | 'Purva Phalguni' | 'Uttara Phalguni'
+    | 'Hasta' | 'Chitra' | 'Swati' | 'Vishakha' | 'Anuradha' | 'Jyeshtha'
+    | 'Mula' | 'Purva Ashadha' | 'Uttara Ashadha' | 'Shravana' | 'Dhanishta' | 'Shatabhisha'
+    | 'Purva Bhadrapada' | 'Uttara Bhadrapada' | 'Revati'
+
+// =============================================================================
+// HIGH-FIDELITY ASTROLOGY TYPES (RAO/RATH PROTOCOLS)
+// =============================================================================
+
+export interface JaiminiKaraka {
+    planet: PlanetName
+    degree: string
+    role: 'AK' | 'AmK' | 'BK' | 'MK' | 'PK' | 'GK' | 'DK'
+    description: string
+}
+
+export interface ShadbalaMetric {
+    planet: PlanetName
+    value: number
+    ratio: number
+    rank: number
+    rupa?: number
+}
+
+export interface BhavabalaMetric {
+    house: string
+    value: number
+    rank: number
+}
+
+export interface BinnashtakvargaTable {
+    sun: number[]
+    moon: number[]
+    mars: number[]
+    mercury: number[]
+    jupiter: number[]
+    venus: number[]
+    saturn: number[]
+}
+
+export interface KPCuspalRow {
+    house: number
+    degree: string
+    signLord: string
+    nakshatraLord: string
+    subLord: string
+    subSubLord: string
+}
+
+export interface DashaLevel {
+    lord: PlanetName | string
+    start: string
+    end: string
+    signal?: 'Green' | 'Yellow' | 'Red' | 'Prime' | 'Danger'
+    instructions?: string
+}
+
+export interface NavataraTier {
+    tier: number
+    name: string
+    nakshatras: Nakshatra[]
+    lord: string
+    status: 'Mind' | 'Wealth' | 'Danger' | 'Prosperity' | 'Obstacles' | 'Success' | 'Destruction' | 'Friend' | 'Allies'
+    description: string
+    tradingAction: string
+}
+
+export interface DivisionalChart {
+    varga: string
+    lagna: number
+    positions: Record<string, number>
+}
+
+export interface TradingLaw {
+    id: string
+    name: string
+    statement: string
+    validatedBy: string[]
+}
+
+export interface HealthVulnerability {
+    zone: string
+    rules: string
+    risk: 'Low' | 'Moderate' | 'High'
+    description: string
+}
+
+// =============================================================================
+// UPDATED MAIN USER DATA INTERFACE
+// =============================================================================
+
 export interface AstrologyUserData {
     // Basic Details
     name: string
@@ -162,32 +265,7 @@ export interface AstrologyUserData {
     // Astrological Details
     lagna: string
     lagnaLord: string
-    lagnaLongitude?: number // Added for D9 calculations
-    remedies?: {
-        gemstones: Array<{
-            planet: PlanetName;
-            gemstone: string;
-            metal: string;
-            finger: string;
-            day: string;
-            weight: string;
-            reason: string;
-            type: "Primary" | "Secondary" | "Avoid";
-        }>;
-        mantras: Array<{
-            deity: string;
-            mantra: string;
-            count: number;
-            time: string;
-            purpose: string;
-        }>;
-        lifestyle: Array<{
-            category: "Diet" | "Activity" | "Charity" | "Habit";
-            description: string;
-            reason: string;
-        }>;
-        specific: string[];
-    };
+    lagnaLongitude?: number
     moonSign: string
     moonSignLord: string
     nakshatra: string
@@ -196,69 +274,163 @@ export interface AstrologyUserData {
     tithi: string
     yoga: string
     karan: string
+    paya: string
+    varna: string
+    yoni: string
+    gana: string
+    nadi: string
 
-    // Planetary Positions
+    // Advanced Metrics
     planetaryPositions: PlanetaryPositions
+    jaiminiKarakas: JaiminiKaraka[]
+    shadbala: ShadbalaMetric[]
+    bhavabala: BhavabalaMetric[]
+    ashtakvarga: Record<number, number>
+    binnashtakvarga: BinnashtakvargaTable
+    kpCuspalMatrix: KPCuspalRow[]
+    navataraChakra: NavataraTier[]
+    divisionalCharts: DivisionalChart[]
+    avasthas: Record<string, string[]>
+    yogi: PlanetName
+    avayogi: PlanetName
+    duplicateYogi: PlanetName
 
-    // Dasha Information
-    currentMahadasha: string
-    previousMahadasha: string
-    upcomingMahadasha: string
-    nextMahadasha: string
-    dashaBalance: string
+    // Dasha Information (Multi-Layer)
+    dashaSystem: {
+        vimshottari: {
+            mahadashas: DashaLevel[]
+            antardashas: DashaLevel[]
+            pratyantars: DashaLevel[]
+        }
+        chara: DashaLevel[]
+        yogini: DashaLevel[]
+        mudda: DashaLevel[]
+    }
 
-    // Favorable & Unfavorable
-    favorable: FavorableElements
-    unfavorable: UnfavorableElements
+    // Trading Intelligence
+    tradingLaws: TradingLaw[]
+    masterChecklist: string[]
+    circuitBreakerActive: boolean
+    dailyTradeLimit: number
 
-    // Health
-    healthTendencies: string[]
+    // Life Analysis
+    careerTiers: Array<{ tier: string; fields: string[]; alignment: string }>
+    financialTimeline: Array<{ age: string; period: string; phase: string; target: string }>
+    healthProtocol: {
+        constitution: string
+        vulnerabilities: HealthVulnerability[]
+        dailyMinimum: string[]
+        diet: string[]
+        movement: string[]
+    }
 
-    // Career
-    careerFields: CareerField[]
+    // Remedies
+    remedies: {
+        gemstones: Array<{
+            planet: PlanetName
+            gemstone: string
+            metal: string
+            finger: string
+            type: "Primary" | "Secondary" | "Avoid"
+            reason: string
+        }>
+        rudraksha: Array<{ type: string; purpose: string }>
+        mantras: Array<{ deity: string; mantra: string; purpose: string }>
+    }
 
-    // Sade Sati
-    sadeSati: SadeSatiPhase[]
+    // --- Backward Compatibility / UI Fields ---
+    sadeSati?: Array<{ phase: string; period: string; status: string; effects: string }>
+    annualForecast?: {
+        year: number
+        muntha: { house: string; effect: string }
+        yearLord: string
+        summary: string
+        quarterly: Array<{ period: string; theme: string; strategy: string }>
+        remedies: string[]
+    }
+    personalityTraits?: string[]
+    yogas?: Array<{ name: string; description: string; strength: string; effect: string }>
+    lifePredictions?: {
+        education: string
+        family: string
+        marriage: string
+        finance: string
+        career: string
+        health: string
+        spirituality: string
+    }
+    numerology?: {
+        lifePathNumber: string
+        insights: any
+    }
+    // Top-level compatibility fields
+    lifePathNumber?: string
+    currentMahadasha?: string
 
-    // Marriage
-    marriageAnalysis: MarriageAnalysis
+    // Favorable/Unfavorable recommendations
+    favorable?: {
+        days: string[]
+        numbers: number[]
+        planets: string[]
+        signs: string[]
+        lagnas: string[]
+        metal: string
+        stone: string
+        colors: string[]
+        gems: string[]
+    }
+    unfavorable?: {
+        day: string
+        numbers: number[]
+        planets: string[]
+        nakshatra: string
+        lagna: string
+        month: string
+        tithi: number[]
+        colors: string[]
+    }
 
-    // Financial
-    financialAnalysis: FinancialAnalysis
+    // Marriage Analysis
+    marriageAnalysis?: {
+        manglikStatus: string
+        kalsarpaStatus: string
+        marriageTiming: string
+        spouseCharacteristics: string[]
+        relationshipChallenges: string[]
+    }
 
-    // Personality
-    personalityTraits: string[]
+    // Health tendencies
+    healthTendencies?: string[]
 
-    // Yogas
-    yogas: Yoga[]
+    // Career fields
+    careerFields?: Array<{
+        field: string
+        compatibility: number
+        reason: string
+    }>
 
-    // Life Predictions
-    lifePredictions: LifePredictions
+    // Financial Analysis
+    financialAnalysis?: {
+        wealthPattern: string
+        incomePhases: Array<{
+            period: string
+            range: string
+            source: string
+        }>
+        wealthSources: string[]
+    }
 
-    // Computed/Dynamic
+    // Added for Mission Control
+    strategicProtocol?: {
+        currentPhase: string
+        primaryLaw: string
+        tuesdayLaw: string
+        mercuryLaw: string
+        financialLadder: Array<{ age: number; netWorth: string; focus: string }>
+    }
+
+    // Computed/Contextual
+    identityAnchor: string
     age: number
     currentYear: number
-
-    // Numerology
-    lifePathNumber: string
-    numerologyInsights: NumerologyInsights
 }
-
-// =============================================================================
-// UTILITY TYPES
-// =============================================================================
-
-export type ZodiacSign =
-    | 'Aries' | 'Taurus' | 'Gemini' | 'Cancer'
-    | 'Leo' | 'Virgo' | 'Libra' | 'Scorpio'
-    | 'Sagittarius' | 'Capricorn' | 'Aquarius' | 'Pisces'
-
-export type House = '1st' | '2nd' | '3rd' | '4th' | '5th' | '6th' |
-    '7th' | '8th' | '9th' | '10th' | '11th' | '12th'
-
-export type Nakshatra =
-    | 'Ashwini' | 'Bharani' | 'Krittika' | 'Rohini' | 'Mrigashira' | 'Ardra'
-    | 'Punarvasu' | 'Pushya' | 'Ashlesha' | 'Magha' | 'Purva Phalguni' | 'Uttara Phalguni'
-    | 'Hasta' | 'Chitra' | 'Swati' | 'Vishakha' | 'Anuradha' | 'Jyeshtha'
-    | 'Mula' | 'Purva Ashadha' | 'Uttara Ashadha' | 'Shravana' | 'Dhanishta' | 'Shatabhisha'
-    | 'Purva Bhadrapada' | 'Uttara Bhadrapada' | 'Revati'

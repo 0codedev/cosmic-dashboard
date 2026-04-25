@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { RahuKaalWidget, HoraCalculator } from "@/components/auspicious-timings"
 import MuhurtaFinder from "@/components/muhurta-finder"
+import BirthTimeRectifier from "@/components/birth-time-rectifier"
 import ComprehensiveReports from "@/components/comprehensive-reports"
 import {
     getPanchangTimings,
@@ -207,6 +208,13 @@ export default function ToolsPanel() {
             icon: <Sun className="w-5 h-5" />,
             color: 'orange',
             description: 'Sunrise, sunset, moonrise'
+        },
+        {
+            id: 'rectifier',
+            name: 'Birth Time Rectifier',
+            icon: <Wrench className="w-5 h-5" />,
+            color: 'indigo',
+            description: 'Verify your birth time'
         }
     ]
 
@@ -534,6 +542,9 @@ export default function ToolsPanel() {
 
             {/* Enhanced Muhurta Finder */}
             <MuhurtaFinder />
+
+            {/* Birth Time Rectifier */}
+            <BirthTimeRectifier />
         </div>
     )
 }

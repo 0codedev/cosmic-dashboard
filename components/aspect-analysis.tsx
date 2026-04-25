@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -204,8 +204,8 @@ export default function AspectAnalysis() {
                         >
                             <Card
                                 className={`p-4 cursor-pointer transition-all ${isSelected
-                                        ? 'ring-2 ring-cyan-400 bg-cyan-900/20'
-                                        : 'bg-slate-800/50 border-purple-500/20 hover:border-cyan-500/50'
+                                    ? 'ring-2 ring-cyan-400 bg-cyan-900/20'
+                                    : 'bg-slate-800/50 border-purple-500/20 hover:border-cyan-500/50'
                                     }`}
                                 onClick={() => setSelectedAspect(isSelected ? null : key)}
                             >
@@ -239,23 +239,28 @@ export default function AspectAnalysis() {
                                 </p>
 
                                 {/* Effects (shown when selected) */}
-                                {isSelected && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        className="pt-3 border-t border-slate-700"
-                                    >
-                                        <div className="text-xs text-cyan-400 mb-2">Effects:</div>
-                                        <ul className="space-y-1">
-                                            {aspect.effects.map((effect, i) => (
-                                                <li key={i} className="text-xs text-gray-300 flex items-start gap-1">
-                                                    <Star className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />
-                                                    {effect}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </motion.div>
-                                )}
+                                <AnimatePresence>
+                                    {isSelected && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: "auto" }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                                            className="pt-3 border-t border-slate-700"
+                                            style={{ overflow: "hidden" }}
+                                        >
+                                            <div className="text-xs text-cyan-400 mb-2">Effects:</div>
+                                            <ul className="space-y-1">
+                                                {aspect.effects.map((effect, i) => (
+                                                    <li key={i} className="text-xs text-gray-300 flex items-start gap-1">
+                                                        <Star className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />
+                                                        {effect}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </Card>
                         </motion.div>
                     )

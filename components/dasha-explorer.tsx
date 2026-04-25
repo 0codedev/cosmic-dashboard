@@ -1,239 +1,220 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-//  Check imports - Lucide icons
-import { Calendar, Clock, TrendingUp, AlertTriangle, Sparkles, ChevronRight, ArrowRight } from "lucide-react"
+import { 
+    Calendar, 
+    Clock, 
+    TrendingUp, 
+    AlertTriangle, 
+    Sparkles, 
+    ChevronRight, 
+    ArrowRight, 
+    Star, 
+    Info, 
+    Zap, 
+    Shield, 
+    Target,
+    Activity,
+    InfoIcon
+} from "lucide-react"
 import { useAstrologyStore } from "@/stores/astrology-store"
-import { calculateVimshottari, calculateAntardashas, calculatePratyantardashas, DashaPhase, AntardashaPhase, PratyantardashaPhase, formatDashaDate } from "@/lib/dasha-engine"
+import { formatDashaDate } from "@/lib/dasha-engine"
 
 export default function DashaExplorer() {
-  const { userData } = useAstrologyStore()
-  const [selectedMahadasha, setSelectedMahadasha] = useState<DashaPhase | null>(null)
-  const [selectedAntardasha, setSelectedAntardasha] = useState<AntardashaPhase | null>(null)
+    const { userData } = useAstrologyStore();
+    const [selectedMahadasha, setSelectedMahadasha] = useState<any>(null);
+    const [selectedAntardasha, setSelectedAntardasha] = useState<any>(null);
 
-  // Calculate Dasha System
-  const dashaSystem = useMemo(() => {
-    if (!userData || !userData.planetaryPositions.moon.absoluteLongitude) return null;
+    const dashas = userData?.dashaSystem?.vimshottari;
+    const currentMaha = dashas?.mahadashas.find((m: any) => {
+        const now = new Date();
+        const start = new Date(m.start.split('/').reverse().join('-'));
+        const end = new Date(m.end.split('/').reverse().join('-'));
+        return now >= start && now <= end;
+    }) || dashas?.mahadashas[1]; // Fallback to Jupiter
 
-    // Parse birth date
-    const dob = new Date(userData.dob);
-    const tobParts = userData.tob.split(':');
-    dob.setHours(parseInt(tobParts[0]), parseInt(tobParts[1]));
+    const activeMaha = selectedMahadasha || currentMaha;
 
-    return calculateVimshottari(userData.planetaryPositions.moon.absoluteLongitude, dob);
-  }, [userData]);
+    const antardashas = dashas?.antardashas || [];
+    const pratyantars = dashas?.pratyantars || [];
 
-  // Antardashas for Selected Mahadasha
-  const activeAntardashas = useMemo(() => {
-    const target = selectedMahadasha || dashaSystem?.current;
-    if (!target) return [];
-    return calculateAntardashas(target);
-  }, [selectedMahadasha, dashaSystem]);
-
-  // Pratyantardashas for Selected Antardasha
-  const activePratyantardashas = useMemo(() => {
-    if (!selectedAntardasha) return [];
-    return calculatePratyantardashas(selectedAntardasha);
-  }, [selectedAntardasha]);
-
-  if (!dashaSystem) {
-    return (
-      <Card className="p-8 text-center bg-slate-900/50 border-slate-800">
-        <p className="text-gray-400">Loading planetary data for Dasha calculation...</p>
-      </Card>
-    )
-  }
-
-  const { current, fullPath } = dashaSystem;
-  const activeMaha = selectedMahadasha || current;
-
-  // Progress of current/selected Mahadasha
-  const now = new Date();
-  const totalDuration = activeMaha.endDate.getTime() - activeMaha.startDate.getTime();
-  const elapsed = now.getTime() - activeMaha.startDate.getTime();
-  const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
-
-  // Helper to get color based on planet
-  const getPlanetColor = (planet: string) => {
-    const colors: Record<string, string> = {
-      Sun: "orange", Moon: "zinc", Mars: "red", Rahu: "blue", Jupiter: "yellow",
-      Saturn: "indigo", Mercury: "emerald", Ketu: "slate", Venus: "pink"
+    const getSignalColor = (signal: string) => {
+        switch (signal?.toLowerCase()) {
+            case 'danger': return 'red';
+            case 'yellow': return 'yellow';
+            case 'green':
+            case 'prime': return 'emerald';
+            default: return 'zinc';
+        }
     };
-    return colors[planet] || "purple";
-  }
 
-  return (
-    <div className="space-y-6">
-      {/* Header / Current Status */}
-      <Card className="bg-gradient-to-br from-slate-900/50 to-indigo-900/30 border-indigo-500/30 p-8 backdrop-blur-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <Clock className="w-32 h-32" />
-        </div>
-
-        <div className="relative z-10 text-center space-y-4">
-          <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 px-4 py-2">
-            {selectedMahadasha ? "Viewing Details" : "Active Now"}
-          </Badge>
-
-          <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 to-purple-300">
-            {activeMaha.planet} Mahadasha
-          </h2>
-
-          <p className="text-gray-300 text-lg">
-            {formatDashaDate(activeMaha.startDate)} — {formatDashaDate(activeMaha.endDate)}
-          </p>
-
-          <div className="max-w-xl mx-auto space-y-2">
-            <div className="flex justify-between text-sm text-gray-400">
-              <span>Started</span>
-              <span>{Math.round(progress)}% Complete</span>
-              <span>Ends</span>
-            </div>
-            <Progress value={progress} className="h-3 bg-slate-800" />
-          </div>
-        </div>
-      </Card>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Timeline Column */}
-        <div className="lg:col-span-1 space-y-4">
-          <h3 className="text-xl font-bold text-gray-200 flex items-center">
-            <TrendingUp className="w-5 h-5 mr-2 text-purple-400" />
-            Mahadasha Timeline
-          </h3>
-          <div className="space-y-3 h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-            {fullPath.map((phase, idx) => {
-              const isCurrent = phase.planet === current.planet && phase.startDate.getTime() === current.startDate.getTime();
-              const isSelected = activeMaha.planet === phase.planet && activeMaha.startDate.getTime() === phase.startDate.getTime();
-              const color = getPlanetColor(phase.planet);
-
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  onClick={() => {
-                    setSelectedMahadasha(phase);
-                    setSelectedAntardasha(null);
-                  }}
-                  className={`
-                                        cursor-pointer rounded-xl p-4 border transition-all duration-300
-                                        ${isSelected
-                      ? `bg-${color}-900/20 border-${color}-400 ring-1 ring-${color}-400`
-                      : isCurrent
-                        ? "bg-slate-800/60 border-indigo-500/50"
-                        : "bg-slate-900/40 border-slate-700/50 hover:bg-slate-800/60"
-                    }
-                                    `}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className={`font-bold text-lg ${isSelected ? `text-${color}-300` : "text-gray-300"}`}>
-                      {phase.planet}
-                    </span>
-                    {isCurrent && <Badge variant="secondary" className="text-xs bg-indigo-500/20 text-indigo-300">Current</Badge>}
-                  </div>
-                  <div className="text-xs text-gray-400 flex justify-between">
-                    <span>{formatDashaDate(phase.startDate)}</span>
-                    <ArrowRight className="w-3 h-3 text-gray-600" />
-                    <span>{formatDashaDate(phase.endDate)}</span>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Drill Down Column */}
-        <div className="lg:col-span-2 space-y-6">
-
-          {/* Antardasha Grid */}
-          <Card className="bg-slate-900/40 border-slate-800 p-6">
-            <h4 className="text-lg font-semibold text-gray-300 mb-4 flex items-center">
-              <Calendar className="w-5 h-5 mr-2 text-blue-400" />
-              {activeMaha.planet} &gt; Antardashas
-            </h4>
-
-            <div className="grid md:grid-cols-2 gap-3">
-              {activeAntardashas.map((antar, idx) => {
-                const isActive = antar.isCurrent && activeMaha === current; // Only show 'current' if looking at current mahadasha
-                const isSelected = selectedAntardasha?.planet === antar.planet;
-
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => setSelectedAntardasha(antar)}
-                    className={`
-                                            p-3 rounded-lg border cursor-pointer transition-colors relative
-                                            ${isSelected
-                        ? "bg-blue-900/20 border-blue-400"
-                        : isActive
-                          ? "bg-indigo-900/10 border-indigo-500/30"
-                          : "bg-slate-800/30 border-slate-700 hover:bg-slate-800"
-                      }
-                                        `}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-blue-200">{antar.planet}</span>
-                      {isActive && <span className="flex h-2 w-2 rounded-full bg-indigo-400 animate-pulse" />}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {formatDashaDate(antar.startDate)} - {formatDashaDate(antar.endDate)}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </Card>
-
-          {/* Pratyantardasha List (If Antardasha Selected) */}
-          <AnimatePresence mode="wait">
-            {selectedAntardasha && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-              >
-                <Card className="bg-slate-900/40 border-slate-800 p-6">
-                  <h4 className="text-lg font-semibold text-gray-300 mb-4 flex items-center">
-                    <Sparkles className="w-5 h-5 mr-2 text-yellow-400" />
-                    {activeMaha.planet} &gt; {selectedAntardasha.planet} &gt; Pratyantardashas
-                  </h4>
-
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                    {activePratyantardashas.map((prat, idx) => {
-                      const isActive = prat.isCurrent && selectedAntardasha.isCurrent && activeMaha === current;
-
-                      return (
-                        <div
-                          key={idx}
-                          className={`
-                                                        text-center p-2 rounded border text-xs
-                                                        ${isActive
-                              ? "bg-yellow-900/20 border-yellow-500/50 text-yellow-200"
-                              : "bg-slate-800/20 border-slate-700 text-gray-400"
-                            }
-                                                    `}
-                        >
-                          <div className="font-bold mb-1">{prat.planet}</div>
-                          <div className="scale-90 opacity-70">
-                            {prat.startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                          </div>
+    return (
+        <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
+            {/* Header / Active Mahadasha */}
+            <Card className="bg-zinc-900 border-zinc-800 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Calendar className="w-48 h-48" />
+                </div>
+                <CardHeader className="text-center relative z-10">
+                    <Badge variant="outline" className="mx-auto mb-4 bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
+                        Current Mahadasha Phase
+                    </Badge>
+                    <CardTitle className="text-5xl font-black text-white uppercase tracking-tighter">
+                        {activeMaha?.lord} <span className="text-zinc-500">Mahadasha</span>
+                    </CardTitle>
+                    <CardDescription className="text-zinc-400 text-lg mt-2">
+                        {activeMaha?.start} — {activeMaha?.end}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="max-w-2xl mx-auto pb-10 relative z-10">
+                    <div className="space-y-4">
+                        <div className="flex justify-between text-xs text-zinc-500 uppercase tracking-widest font-bold">
+                            <span>Commencement</span>
+                            <span>Evolution</span>
+                            <span>Completion</span>
                         </div>
-                      )
-                    })}
-                  </div>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                        <Progress value={65} className="h-2 bg-zinc-800" indicatorClassName="bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+                        <p className="text-center text-sm text-zinc-500 italic">
+                            "Period of expansion, higher learning, and spiritual growth (16 years)"
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
 
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* 1. The Timeline (Mahadashas) */}
+                <div className="lg:col-span-4 space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="w-5 h-5 text-indigo-400" />
+                        <h3 className="text-lg font-bold text-zinc-100 uppercase tracking-widest">Life Arc</h3>
+                    </div>
+                    <div className="space-y-3">
+                        {dashas?.mahadashas.map((m: any, i: number) => {
+                            const isSelected = activeMaha?.lord === m.lord;
+                            return (
+                                <motion.div
+                                    key={i}
+                                    whileHover={{ x: 4 }}
+                                    onClick={() => setSelectedMahadasha(m)}
+                                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                                        isSelected 
+                                        ? "bg-indigo-500/10 border-indigo-500/50 ring-1 ring-indigo-500/20" 
+                                        : "bg-zinc-900 border-zinc-800 hover:border-zinc-700"
+                                    }`}
+                                >
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className={`font-bold uppercase tracking-tight ${isSelected ? 'text-indigo-400' : 'text-zinc-300'}`}>
+                                            {m.lord}
+                                        </span>
+                                        <span className="text-[10px] text-zinc-500 font-mono">{m.start.split('/')[2]} — {m.end.split('/')[2]}</span>
+                                    </div>
+                                    <p className="text-[10px] text-zinc-500 line-clamp-1 italic">
+                                        {m.lord === 'jupiter' ? 'Wisdom & Expansion' : m.lord === 'saturn' ? 'Structure & Karma' : 'Communication & Growth'}
+                                    </p>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* 2. Sub-periods (Antardashas & Pratyantars) */}
+                <div className="lg:col-span-8 space-y-8">
+                    {/* Antardashas */}
+                    <div>
+                        <div className="flex items-center gap-2 mb-4">
+                            <Clock className="w-5 h-5 text-purple-400" />
+                            <h3 className="text-lg font-bold text-zinc-100 uppercase tracking-widest">Active Sub-periods (Antardashas)</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {antardashas.map((a: any, i: number) => {
+                                const color = getSignalColor(a.signal);
+                                return (
+                                    <Card key={i} className={`bg-zinc-900 border-zinc-800 relative overflow-hidden group hover:border-${color}-500/30 transition-colors`}>
+                                        <CardHeader className="p-4 pb-2">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <CardTitle className="text-lg text-zinc-100 uppercase">{a.lord}</CardTitle>
+                                                    <CardDescription className="text-[10px] font-mono">{a.start} — {a.end}</CardDescription>
+                                                </div>
+                                                {a.signal && (
+                                                    <Badge className={`bg-${color}-500/20 text-${color}-400 border-${color}-500/30`}>
+                                                        {a.signal}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="p-4 pt-0">
+                                            <p className="text-xs text-zinc-400 leading-relaxed italic">
+                                                {a.instructions || "Stable sub-period focus."}
+                                            </p>
+                                        </CardContent>
+                                        {a.signal === 'Danger' && (
+                                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                                        )}
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Pratyantars (The Ultra-Timing) */}
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <Zap className="w-5 h-5 text-yellow-400" />
+                                <h3 className="text-lg font-bold text-zinc-100 uppercase tracking-widest">The Ultra-Timing (Pratyantardashas)</h3>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] border-zinc-800 text-zinc-500">4th Level Resolution</Badge>
+                        </div>
+                        <div className="space-y-4">
+                            {pratyantars.map((p: any, i: number) => {
+                                const color = getSignalColor(p.signal);
+                                return (
+                                    <div key={i} className={`p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800 flex flex-col md:flex-row gap-4 items-start md:items-center group hover:bg-zinc-800/50 transition-all border-l-4 border-l-${color}-500`}>
+                                        <div className="min-w-[120px]">
+                                            <h4 className="text-lg font-black text-zinc-100 uppercase">{p.lord}</h4>
+                                            <p className="text-[10px] text-zinc-500 font-mono">{p.start} — {p.end}</p>
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <InfoIcon className={`w-3 h-3 text-${color}-400`} />
+                                                <span className={`text-[10px] font-bold uppercase tracking-wider text-${color}-400`}>Trading Status: {p.signal}</span>
+                                            </div>
+                                            <p className="text-sm text-zinc-300 leading-relaxed font-medium">
+                                                {p.instructions}
+                                            </p>
+                                        </div>
+                                        <div className={`px-3 py-1 rounded-full bg-${color}-500/10 border border-${color}-500/20 text-[10px] font-bold text-${color}-400 uppercase tracking-widest`}>
+                                            {p.signal === 'Danger' ? '🚫 Stop' : p.signal === 'Yellow' ? '⚠️ Caution' : '✅ Proceed'}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Footer Summary */}
+            <Card className="bg-zinc-900 border-zinc-800 border-t-4 border-t-indigo-500">
+                <CardContent className="p-6">
+                    <div className="flex gap-4 items-start">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                            <Activity className="w-5 h-5 text-indigo-400" />
+                        </div>
+                        <div>
+                            <h4 className="text-zinc-100 font-bold mb-1">Dasha Architecture Note</h4>
+                            <p className="text-sm text-zinc-400 leading-relaxed">
+                                You are currently in the final years of your 16-year Jupiter Mahadasha. The focus is shifting from pure learning to the structured discipline of the upcoming Saturn Mahadasha (2027). All trading signals are calculated by crossing these major arcs with the 4th-level Pratyantar precision.
+                            </p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
-      </div>
-    </div>
-  )
+    );
 }

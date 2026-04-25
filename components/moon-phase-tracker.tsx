@@ -1,25 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { motion } from "framer-motion"
 
-export default function MoonPhaseTracker() {
-  const [moonPhase, setMoonPhase] = useState("")
-  const [moonIllumination, setMoonIllumination] = useState(0)
-  const [moonSign, setMoonSign] = useState("")
-  const [lunarDay, setLunarDay] = useState("")
+const MOON_INFLUENCE_STYLES = {
+  yellow: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  purple: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+  green: "bg-green-500/20 text-green-400 border-green-500/30",
+  blue: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+} as const
 
-  useEffect(() => {
-    // Enhanced moon phase calculation
+export default function MoonPhaseTracker() {
+  const { moonPhase, moonIllumination, moonSign, lunarDay } = useMemo(() => {
     const now = new Date()
     const totalDays = Math.floor((now.getTime() - new Date(2000, 0, 6).getTime()) / (1000 * 60 * 60 * 24))
     const moonCycle = totalDays % 29.53
 
     let phase = ""
     let illumination = 0
-    const sign = ""
     let tithi = ""
 
     if (moonCycle < 1.84) {
@@ -56,7 +56,6 @@ export default function MoonPhaseTracker() {
       tithi = "Krishna Dwadashi"
     }
 
-    // Current moon sign calculation (simplified)
     const moonSigns = [
       "Aries",
       "Taurus",
@@ -71,15 +70,16 @@ export default function MoonPhaseTracker() {
       "Aquarius",
       "Pisces",
     ]
-    const currentMoonSign = moonSigns[Math.floor((totalDays / 2.25) % 12)]
 
-    setMoonPhase(phase)
-    setMoonIllumination(illumination)
-    setMoonSign(currentMoonSign)
-    setLunarDay(tithi)
+    return {
+      moonPhase: phase,
+      moonIllumination: illumination,
+      moonSign: moonSigns[Math.floor((totalDays / 2.25) % 12)],
+      lunarDay: tithi,
+    }
   }, [])
 
-  const getMoonEmoji = () => {
+  const moonEmoji = useMemo(() => {
     switch (moonPhase) {
       case "New Moon":
         return "🌑"
@@ -100,32 +100,28 @@ export default function MoonPhaseTracker() {
       default:
         return "🌙"
     }
-  }
+  }, [moonPhase])
 
-  const getMoonInfluence = () => {
-    if (moonPhase === "Full Moon") return { text: "High emotional energy, manifestation power", color: "yellow" }
-    if (moonPhase === "New Moon") return { text: "New beginnings, introspection time", color: "purple" }
-    if (moonPhase.includes("Waxing")) return { text: "Growth, expansion, building energy", color: "green" }
-    return { text: "Release, letting go, cleansing", color: "blue" }
-  }
-
-  const influence = getMoonInfluence()
+  const influence = useMemo(() => {
+    if (moonPhase === "Full Moon") return { text: "High emotional energy, manifestation power", color: "yellow" as const }
+    if (moonPhase === "New Moon") return { text: "New beginnings, introspection time", color: "purple" as const }
+    if (moonPhase.includes("Waxing")) return { text: "Growth, expansion, building energy", color: "green" as const }
+    return { text: "Release, letting go, cleansing", color: "blue" as const }
+  }, [moonPhase])
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
       <Card className="bg-gradient-to-br from-slate-800/50 to-indigo-900/30 border-indigo-500/30 px-4 py-2 backdrop-blur-sm w-full">
         <div className="space-y-2">
           <div className="flex flex-row items-center justify-between gap-4">
-            {/* Left: Icon and Basic Info */}
             <div className="flex items-center space-x-3">
-              <div className="text-2xl">{getMoonEmoji()}</div>
+              <div className="text-2xl">{moonEmoji}</div>
               <div>
                 <div className="text-sm text-indigo-400 font-semibold leading-none mb-1">{moonPhase}</div>
                 <div className="text-[10px] text-gray-400 leading-none">{moonIllumination}% Illuminated</div>
               </div>
             </div>
 
-            {/* Middle: Details */}
             <div className="flex flex-col items-end sm:items-center sm:flex-row sm:space-x-4 space-y-1 sm:space-y-0 text-right sm:text-left">
               <div className="text-[10px] text-cyan-400 leading-none">
                 <span className="font-semibold">Moon in:</span> {moonSign}
@@ -135,30 +131,23 @@ export default function MoonPhaseTracker() {
               </div>
             </div>
 
-            {/* Right: Badge */}
             <div className="hidden sm:block">
-              <Badge
-                className={`bg-${influence.color}-500/20 text-${influence.color}-400 border-${influence.color}-500/30 text-[10px] px-2 py-0.5 whitespace-nowrap`}
-              >
+              <Badge className={`${MOON_INFLUENCE_STYLES[influence.color]} text-[10px] px-2 py-0.5 whitespace-nowrap`}>
                 {influence.text}
               </Badge>
             </div>
           </div>
 
-          {/* Mobile only Badge (below on very small screens if needed, otherwise hidden to save space or adjust as needed) */}
           <div className="sm:hidden flex justify-end">
-            <Badge
-              className={`bg-${influence.color}-500/20 text-${influence.color}-400 border-${influence.color}-500/30 text-[10px] px-2 py-0.5 whitespace-nowrap`}
-            >
+            <Badge className={`${MOON_INFLUENCE_STYLES[influence.color]} text-[10px] px-2 py-0.5 whitespace-nowrap`}>
               {influence.text}
             </Badge>
           </div>
 
-          {/* Bottom: Progress Bar */}
           <div className="w-full bg-slate-700/50 rounded-full h-1 mt-1">
             <div
               className="bg-gradient-to-r from-indigo-400 to-purple-400 h-1 rounded-full transition-all duration-1000"
-              style={{ width: `${(moonIllumination / 100) * 100}%` }}
+              style={{ width: `${moonIllumination}%` }}
             ></div>
           </div>
         </div>

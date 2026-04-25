@@ -1,4 +1,4 @@
-import { AstrologyUserData } from '@/types/astrology'
+import { AstrologyUserData, PlanetaryPositions } from '@/types/astrology'
 import { SUDHANSHU_DATA } from '@/data/user-data'
 import { ZODIAC_SIGNS } from '@/data/interpretation/signs'
 import { NAKSHATRAS } from '@/data/interpretation/nakshatras'
@@ -65,20 +65,19 @@ function getHouseNumber(planetLon: number, lagnaLon: number): number {
     return Math.floor(diff / 30) + 1;
 }
 
-function calculateSadeSati(moonLon: number, saturnLon: number): any[] {
+function calculateSadeSati(moonLon: number, saturnLon: number): SadeSatiResult[] {
     const moonSignIndex = Math.floor(normalize(moonLon) / 30);
     const saturnSignIndex = Math.floor(normalize(saturnLon) / 30);
     const diff = (saturnSignIndex - moonSignIndex + 12) % 12;
 
-    const status = {
+    const status: Record<number, SadeSatiStatus> = {
         11: { phase: "Rising", effect: "Mental stress and sudden changes." },
         0: { phase: "Peak", effect: "Intense transformation and challenges." },
-        1: { phase: "Setting", effect: "Gradual relief and stabilization." },
+        1: { phase: "Setting", effect: "Gradual relief and stabilizing." },
     };
 
-    if (diff in status) {
-        // @ts-ignore
-        const s = status[diff];
+    const s = status[diff];
+    if (s) {
         return [{
             phase: s.phase,
             period: "Current Transit",
@@ -88,6 +87,18 @@ function calculateSadeSati(moonLon: number, saturnLon: number): any[] {
     }
     return [];
 }
+
+type SadeSatiResult = {
+    phase: string;
+    period: string;
+    status: string;
+    effects: string;
+};
+
+type SadeSatiStatus = {
+    phase: string;
+    effect: string;
+};
 
 function generatePersonality(lagnaName: string, moonName: string, nakshatraName: string): string[] {
     const lTraits = ZODIAC_SIGNS[lagnaName]?.traits || [];
@@ -150,7 +161,7 @@ function generateUnfavorable(lagnaIndex: number): any {
 }
 
 function generateWealthAnalysis(secondLord: string, eleventhLord: string, careers: any[]): any {
-    const patterns = {
+    const patterns: Record<string, string> = {
         "Sun": "Wealth through authority and state.",
         "Moon": "Fluctuating but ample liquid cash.",
         "Mars": "Wealth through assets and lands.",
@@ -159,13 +170,12 @@ function generateWealthAnalysis(secondLord: string, eleventhLord: string, career
         "Venus": "Wealth through arts and luxury.",
         "Saturn": "Slow, steady accumulation over time.",
     };
-    // @ts-ignore
-    const pattern = patterns[secondLord] || patterns["Jupiter"];
+    const pattern = patterns[secondLord] || "Steady growth through personal effort.";
     return { wealthPattern: pattern, incomePhases: [{ period: "Prime Earning Years", range: "30-50", source: careers[0].field }], wealthSources: [`${secondLord}-ruled sectors`, `${eleventhLord}-ruled gains`] };
 }
 
 function generateMarriageAnalysis(seventhLord: string, seventhSign: string): any {
-    const spouseNature = {
+    const spouseNature: Record<string, string> = {
         "Sun": "Dominant and authoritative",
         "Moon": "Caring but sensitive",
         "Mars": "Energetic and protective",
@@ -175,8 +185,8 @@ function generateMarriageAnalysis(seventhLord: string, seventhSign: string): any
         "Saturn": "Mature, practical, older"
     };
     const timing = seventhLord === "Saturn" ? "Delayed (Post 30)" : "Early/Timely";
-    // @ts-ignore
-    return { manglikStatus: "Requires Position Check", kalsarpaStatus: "No", marriageTiming: timing, spouseCharacteristics: [spouseNature[seventhLord], `Embodies ${seventhSign} traits`], relationshipChallenges: ["Ego clashes", "Communication"] };
+    const spouseChar = spouseNature[seventhLord] || "Supportive partner";
+    return { manglikStatus: "Requires Position Check", kalsarpaStatus: "No", marriageTiming: timing, spouseCharacteristics: [spouseChar, `Embodies ${seventhSign} traits`], relationshipChallenges: ["Ego clashes", "Communication"] };
 }
 
 function calculateNumerology(dob: Date): any {
@@ -214,9 +224,52 @@ export function calculatePlanetaryPositions(birthDate: Date) {
     };
 }
 
+export function calculateCurrentPlanetaryPositions(date: Date) {
+    const raw = calculatePlanetaryPositions(date);
+
+    const format = (lon: number) => {
+        const sign = getZodiacSign(lon);
+        const nak = getNakshatra(lon);
+        return {
+            sign: sign.name,
+            degree: formatDegree(sign.degrees),
+            nakshatra: nak.name,
+            longitude: lon
+        };
+    };
+
+    return {
+        sun: format(raw.sun),
+        moon: format(raw.moon),
+        mars: format(raw.mars),
+        mercury: format(raw.mercury),
+        jupiter: format(raw.jupiter),
+        venus: format(raw.venus),
+        saturn: format(raw.saturn)
+    };
+}
+
 // --- MAIN ENGINE ---
 
-export async function calculateBirthChart(details: BirthDetails): Promise<AstrologyUserData> {
+export type SimplifiedAstrologyData = Partial<AstrologyUserData> & {
+    name: string;
+    dob: string;
+    tob: string;
+    pob: string;
+    lagna: string;
+    lagnaLord: string;
+    moonSign: string;
+    moonSignLord: string;
+    nakshatra: string;
+    nakshatraLord: string;
+    sunSign: string;
+    planetaryPositions: PlanetaryPositions;
+    identityAnchor: string;
+    age: number;
+    currentYear: number;
+};
+
+export async function calculateBirthChart(details: BirthDetails): Promise<SimplifiedAstrologyData> {
     if (details.name.toLowerCase().includes("sudhanshu")) return SUDHANSHU_DATA;
 
     const birthDate = new Date(`${details.date}T${details.time}`);
@@ -282,7 +335,7 @@ export async function calculateBirthChart(details: BirthDetails): Promise<Astrol
         longitude: details.longitude.toFixed(2),
         lagna: lagnaInfo.name,
         lagnaLord: lagnaData.lord,
-        lagnaLongitude: lagnaLon, // Added for D9 calculations
+        lagnaLongitude: lagnaLon,
         moonSign: moonInfo.name,
         moonSignLord: moonData.lord,
         nakshatra: `${moonNak.name}, Pada ${moonNak.pada}`,
@@ -300,10 +353,15 @@ export async function calculateBirthChart(details: BirthDetails): Promise<Astrol
             rahu: { sign: "Pisces", house: "12th", degree: "00°00'", nakshatra: "Revati", pada: 1, retrograde: true, lord: "Jupiter", description: "Desire", absoluteLongitude: 350 },
             ketu: { sign: "Virgo", house: "6th", degree: "00°00'", nakshatra: "Chitra", pada: 3, retrograde: true, lord: "Mercury", description: "Detachmend", absoluteLongitude: 170 }
         },
-        currentMahadasha: `${moonNak.lord} (Active)`, previousMahadasha: "Unknown", upcomingMahadasha: "Unknown", nextMahadasha: "Unknown", dashaBalance: "Calculated",
-        personalityTraits: personality, favorable: fav, unfavorable: unfav,
-        healthTendencies: lagnaData.healthTendencies, careerFields: careers, sadeSati: sadeSati, marriageAnalysis: marriage, financialAnalysis: wealth, yogas: [],
+        currentMahadasha: `${moonNak.lord} (Active)`,
+        personalityTraits: personality,
         lifePredictions: predictions,
-        age: new Date().getFullYear() - birthDate.getFullYear(), currentYear: new Date().getFullYear(), lifePathNumber: num.lifePathNumber, numerologyInsights: num.insights
+        numerology: {
+            lifePathNumber: num.lifePathNumber,
+            insights: num.insights
+        },
+        age: new Date().getFullYear() - birthDate.getFullYear(),
+        currentYear: new Date().getFullYear(),
+        identityAnchor: "Generated from planetary positions"
     }
 }

@@ -334,83 +334,105 @@ function AddProfileDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     )
 }
 
+// ... imports
+import BirthTimeRectifier from "@/components/birth-time-rectifier"
+
 // Profile Card for Settings
 export function ProfileCard({ profile }: { profile: UserProfile }) {
     const { updateProfile, deleteProfile, setActiveProfile, activeProfile } = useProfiles()
-    const [isEditing, setIsEditing] = useState(false)
+    const [isRectifying, setIsRectifying] = useState(false)
 
     const isActive = profile.id === activeProfile.id
 
     return (
-        <Card className={`p-4 ${isActive ? 'bg-purple-900/30 border-purple-500/50' : 'bg-slate-800/50 border-gray-700'}`}>
-            <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-xl text-white font-semibold">
-                        {profile.name.charAt(0)}
-                    </div>
-                    <div>
-                        <h4 className="font-semibold text-white flex items-center gap-2">
-                            {profile.name}
-                            {profile.isDefault && (
-                                <span className="text-xs bg-purple-500/30 text-purple-300 px-2 py-0.5 rounded">Primary</span>
-                            )}
-                        </h4>
-                        <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
-                            <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {profile.birthDate}
-                            </span>
-                            {profile.birthPlace && (
+        <>
+            <Card className={`p-4 ${isActive ? 'bg-purple-900/30 border-purple-500/50' : 'bg-slate-800/50 border-gray-700'}`}>
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-xl text-white font-semibold">
+                            {profile.name.charAt(0)}
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-white flex items-center gap-2">
+                                {profile.name}
+                                {profile.isDefault && (
+                                    <span className="text-xs bg-purple-500/30 text-purple-300 px-2 py-0.5 rounded">Primary</span>
+                                )}
+                            </h4>
+                            <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
                                 <span className="flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {profile.birthPlace}
+                                    <Calendar className="w-3 h-3" />
+                                    {profile.birthDate}
                                 </span>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                            {profile.sunSign && (
-                                <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">
-                                    ☉ {profile.sunSign}
-                                </span>
-                            )}
-                            {profile.moonSign && (
-                                <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
-                                    ☽ {profile.moonSign}
-                                </span>
-                            )}
-                            {profile.ascendant && (
-                                <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded">
-                                    ASC {profile.ascendant}
-                                </span>
-                            )}
+                                <button
+                                    onClick={() => setIsRectifying(true)}
+                                    className="flex items-center gap-1 hover:text-indigo-400 transition-colors cursor-pointer group"
+                                    title="Verify Birth Time"
+                                >
+                                    <Clock className="w-3 h-3 text-indigo-400 group-hover:animate-pulse" />
+                                    {profile.birthTime}
+                                    <span className="text-[10px] text-indigo-400 underline decoration-indigo-500/30 group-hover:decoration-indigo-500 ml-1">
+                                        Verify?
+                                    </span>
+                                </button>
+                                {profile.birthPlace && (
+                                    <span className="flex items-center gap-1">
+                                        <MapPin className="w-3 h-3" />
+                                        {profile.birthPlace}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                                {profile.sunSign && (
+                                    <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">
+                                        ☉ {profile.sunSign}
+                                    </span>
+                                )}
+                                {profile.moonSign && (
+                                    <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
+                                        ☽ {profile.moonSign}
+                                    </span>
+                                )}
+                                {profile.ascendant && (
+                                    <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded">
+                                        ASC {profile.ascendant}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="flex items-center gap-1">
-                    {!isActive && (
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setActiveProfile(profile.id)}
-                            className="text-xs text-cyan-400"
-                        >
-                            Switch
-                        </Button>
-                    )}
-                    {!profile.isDefault && (
-                        <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => deleteProfile(profile.id)}
-                            className="text-red-400 hover:text-red-300"
-                            aria-label="Delete profile"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                        {!isActive && (
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setActiveProfile(profile.id)}
+                                className="text-xs text-cyan-400"
+                            >
+                                Switch
+                            </Button>
+                        )}
+                        {!profile.isDefault && (
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => deleteProfile(profile.id)}
+                                className="text-red-400 hover:text-red-300"
+                                aria-label="Delete profile"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </Button>
+                        )}
+                    </div>
                 </div>
-            </div>
-        </Card>
+            </Card>
+
+            <Dialog open={isRectifying} onOpenChange={setIsRectifying}>
+                <DialogContent className="bg-slate-950 border-indigo-500/30 text-white max-w-4xl p-0 overflow-hidden">
+                    <BirthTimeRectifier />
+                </DialogContent>
+            </Dialog>
+        </>
     )
 }

@@ -5,30 +5,32 @@ import { motion } from "framer-motion"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Sparkles, Star, ArrowRight, Loader2 } from "lucide-react"
+import { Star, ArrowRight, Loader2 } from "lucide-react"
+import CosmicBackground from "@/components/cosmic-background"
 import { useUser } from "@/contexts/user-context"
 import { calculateBirthChart } from "@/lib/cosmic-engine"
-import CosmicBackground from "@/components/cosmic-background"
 
 export default function LandingPage() {
-    const { setUserData, setIsLoading, isLoading } = useUser()
+    const { setUserData, isLoading, setIsLoading } = useUser()
     const [formData, setFormData] = useState({
         name: "",
         date: "",
         time: "",
-        location: "Hyderabad, India", // Default for ease
+        location: "",
     })
 
-    const handleGenerate = async (e: React.FormEvent) => {
+    async function handleGenerate(e: React.FormEvent) {
         e.preventDefault()
         setIsLoading(true)
 
         try {
-            // Logic to convert simple string location to lat/long would go here
             const data = await calculateBirthChart({
-                ...formData,
-                latitude: 17.385, // Mock lat
-                longitude: 78.486 // Mock long
+                name: formData.name,
+                date: formData.date,
+                time: formData.time,
+                location: formData.location || "Generated",
+                latitude: 17.385,
+                longitude: 78.486,
             })
 
             setUserData(data)
@@ -130,9 +132,12 @@ export default function LandingPage() {
 
                     <div className="mt-6 text-center">
                         <p className="text-xs text-slate-500">
-                            Calculated using Lahiri Ayanamsha • Privacy Focused
+                            Calculated using Lahiri Ayanamsha and privacy-focused defaults
                         </p>
-                        <div onClick={() => setFormData({ name: "Sudhanshu Gaddam", date: "2005-10-14", time: "15:33", location: "Hyderabad, India" })} className="mt-4 text-xs text-cyan-500/50 hover:text-cyan-400 cursor-pointer transition-colors">
+                        <div
+                            onClick={() => setFormData({ name: "Sudhanshu Gaddam", date: "2005-10-14", time: "15:33", location: "Hyderabad, India" })}
+                            className="mt-4 text-xs text-cyan-500/50 hover:text-cyan-400 cursor-pointer transition-colors"
+                        >
                             [Demo Mode: Load Sudhanshu]
                         </div>
                     </div>

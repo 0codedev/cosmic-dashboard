@@ -23,10 +23,11 @@ const parsePlanets = (planetStrings: string[]) => {
         const isRetro = p.toLowerCase().includes("retro") || p.includes("*")
         const isCombust = p.includes("^")
         const isVargottama = p.includes("□")
+        const isVerified = p.includes("✓")
         // Clean name: remove special chars and generic " Retrograde" text
-        let name = p.split("(")[0].replace(/[*^□]/g, "").trim()
+        let name = p.split("(")[0].replace(/[*^□✓]/g, "").trim()
 
-        return { name, retro: isRetro, combust: isCombust, vargottama: isVargottama }
+        return { name, retro: isRetro, combust: isCombust, vargottama: isVargottama, verified: isVerified }
     })
 }
 
@@ -190,6 +191,7 @@ export default function NorthIndianChart({
                                                 >
                                                     {PLANET_SYMBOLS[planet.name] || planet.name.slice(0, 2)}
                                                     {planet.retro && <tspan fontSize="2.5" dy="-1" fill="#ef4444">*</tspan>}
+                                                    {planet.verified && <tspan fontSize="2.5" dy="-1" fill="#4ade80" fontWeight="bold">✓</tspan>}
                                                 </text>
                                             )
                                         })}
